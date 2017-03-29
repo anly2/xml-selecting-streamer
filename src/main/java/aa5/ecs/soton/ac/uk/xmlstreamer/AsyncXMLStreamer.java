@@ -16,6 +16,7 @@ import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.Selector;
 public class AsyncXMLStreamer extends BasicXMLStreamer {
 	
 	public static void main(String[] args) {
+		/*
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer((XMLEventReader)null);
 		
 		streamer.fire("*", new Node("1"));
@@ -23,6 +24,7 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 		streamer.fire("*", new Node("2"));
 		streamer.off(a);
 		streamer.fire("*", new Node("3"));
+		*/
 	}
 
 	/* Properties */

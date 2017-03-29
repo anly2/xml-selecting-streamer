@@ -1,4 +1,4 @@
-package aa5.ecs.soton.ac.uk.xmlstreamer.selectors;
+package aa5.ecs.soton.ac.uk.xmlstreamer.parser;
 
 import java.util.Arrays;
 import java.util.HashSet;

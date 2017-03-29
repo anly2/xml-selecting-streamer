@@ -7,8 +7,8 @@ import java.util.function.Consumer;
 
 import aa5.ecs.soton.ac.uk.xmlstreamer.AsyncXMLStreamer;
 import aa5.ecs.soton.ac.uk.xmlstreamer.Element;
-import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.SimpleParser.AST;
-import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.SimpleParser.Builder;
+import aa5.ecs.soton.ac.uk.xmlstreamer.parser.SimpleParser;
+import aa5.ecs.soton.ac.uk.xmlstreamer.parser.SimpleParser.AST;
 
 public interface Selector {
 	public void attach(AsyncXMLStreamer streamer);
@@ -30,7 +30,7 @@ public interface Selector {
 		public Compiler() {
 			
 			final Selector.Factory s = new Selector.Factory();
-			parser = new Builder()
+			parser = new SimpleParser.Builder()
 				.rule("\\s*+"+ "(\\S++)"+"\\s*+"+   "~"    +"\\s*+" +"(.*+)", m -> s.selSibling())
 				.rule("\\s*+"+ "(\\S++)"+"\\s*+"+  "\\+"   +"\\s*+" +"(.*+)", m -> s.selImmediateSibling())
 				.rule("\\s*+"+ "(\\S++)"+"\\s*+"+   ">"    +"\\s*+" +"(.*+)", m -> s.selImmediateDescendent())
@@ -73,10 +73,29 @@ public interface Selector {
 			public String toString() {
 				return getSelector();
 			}
-		
+
+			
 			@Override
-			public void accept(Element t) {
-				//TODO: REMOVE AND DO
+			public void attach(AsyncXMLStreamer streamer) {
+				streamer.on(getSelector(), this);
+
+				for (int i=0; i<getChildCount(); i++)
+					getChild(i).<Selector>maybe().ifPresent(s -> s.attach(streamer));
+			}
+
+			@Override
+			public void detach(AsyncXMLStreamer streamer) {
+				streamer.off(getSelector(), this);
+
+				for (int i=0; i<getChildCount(); i++)
+					getChild(i).<Selector>maybe().ifPresent(s -> s.detach(streamer));
+			}
+
+
+			@Override
+			public void accept(Element element) {
+//				if (allChildrenSatisfied() && matches(element))
+//					fire.run();
 			}
 		}
 
@@ -95,7 +114,16 @@ public interface Selector {
 			public String toString() {
 				return getSelector();
 			}
-		
+
+			@Override
+			public void attach(AsyncXMLStreamer streamer) {
+				streamer.on(getSelector(), this);
+			}
+
+			@Override
+			public void detach(AsyncXMLStreamer streamer) {
+				streamer.off(getSelector(), this);
+			}
 
 			@Override
 			public void accept(Element t) {
@@ -120,7 +148,6 @@ public interface Selector {
 		public AST selAny() {
 			return new SelectorLeaf("*") {
 				public void attach(AsyncXMLStreamer streamer) {
-					streamer.on(getSelector(), this);
 				}
 
 				public void detach(AsyncXMLStreamer streamer) {
