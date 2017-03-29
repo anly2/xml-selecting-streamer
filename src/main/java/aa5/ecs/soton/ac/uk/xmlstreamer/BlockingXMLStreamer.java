@@ -54,9 +54,9 @@ public class BlockingXMLStreamer extends AsyncXMLStreamer {
 
 
 	@Override
-	public void on(String selector, Consumer<Element> action) {
+	public Consumer<Element> on(String selector, Consumer<Element> action) {
 		selectors().register(selector);
-		super.on(selector, action);
+		return super.on(selector, action);
 	}
 	
 	@Override

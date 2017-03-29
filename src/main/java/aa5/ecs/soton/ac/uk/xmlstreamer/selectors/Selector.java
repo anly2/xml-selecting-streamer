@@ -3,8 +3,10 @@ package aa5.ecs.soton.ac.uk.xmlstreamer.selectors;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import aa5.ecs.soton.ac.uk.xmlstreamer.AsyncXMLStreamer;
+import aa5.ecs.soton.ac.uk.xmlstreamer.Element;
 import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.SimpleParser.AST;
 import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.SimpleParser.Builder;
 
@@ -56,7 +58,7 @@ public interface Selector {
 		
 		/* Selector types */
 		
-		private abstract class SelectorNode extends AST.Node implements Selector {
+		private abstract class SelectorNode extends AST.Node implements Selector, Consumer<Element> {
 			public String raw;
 			
 			public SelectorNode(String raw, int childrenCount) {
@@ -71,9 +73,14 @@ public interface Selector {
 			public String toString() {
 				return getSelector();
 			}
+		
+			@Override
+			public void accept(Element t) {
+				//TODO: REMOVE AND DO
+			}
 		}
 
-		private abstract class SelectorLeaf extends AST.Leaf implements Selector {
+		private abstract class SelectorLeaf extends AST.Leaf implements Selector, Consumer<Element> {
 			public String raw;
 			
 			public SelectorLeaf(String raw) {
@@ -87,6 +94,12 @@ public interface Selector {
 			@Override
 			public String toString() {
 				return getSelector();
+			}
+		
+
+			@Override
+			public void accept(Element t) {
+				//TODO: REMOVE AND DO
 			}
 		}
 		
@@ -107,10 +120,15 @@ public interface Selector {
 		public AST selAny() {
 			return new SelectorLeaf("*") {
 				public void attach(AsyncXMLStreamer streamer) {
-//					streamer.
+					streamer.on(getSelector(), this);
 				}
 
 				public void detach(AsyncXMLStreamer streamer) {
+					streamer.off(getSelector(), this);
+				}
+			
+				public void accept(Element e) {
+					System.out.println(e.getTag());
 				}
 			};
 		}
