@@ -5,9 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.w3c.dom.Element;
-
 import aa5.ecs.soton.ac.uk.xmlstreamer.AsyncXMLStreamer;
+import aa5.ecs.soton.ac.uk.xmlstreamer.Element;
 import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.SimpleParser.AST;
 import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.SimpleParser.Builder;
 

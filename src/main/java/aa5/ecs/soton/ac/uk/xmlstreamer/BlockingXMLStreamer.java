@@ -12,8 +12,6 @@ import java.util.function.Consumer;
 
 import javax.xml.stream.XMLEventReader;
 
-import org.w3c.dom.Element;
-
 import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.Selector;
 
 public class BlockingXMLStreamer extends AsyncXMLStreamer {

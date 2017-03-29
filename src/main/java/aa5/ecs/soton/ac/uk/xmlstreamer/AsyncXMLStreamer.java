@@ -12,8 +12,6 @@ import java.util.function.Consumer;
 
 import javax.xml.stream.XMLEventReader;
 
-import org.w3c.dom.Element;
-
 import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.Selector;
 
 public class AsyncXMLStreamer extends BasicXMLStreamer {
@@ -74,8 +72,27 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	}
 	
 	
+	protected void fire(String selector, Element element) {
+		Set<Consumer<Element>> acts = actions.get(selector);
+		if (acts != null)
+			acts.forEach(action -> action.accept(element));
+	}
+	
+	
 	/* Hooks */
 	
+	public Element nextTag() {
+		Element element = super.nextTag();
+		
+		if (element == null) return null;
+		
+		if (element.isClosed())
+			fire("*:after", element);
+		else
+			fire("*:before", element);
+		
+		return element;
+	}
 	
 
 	
