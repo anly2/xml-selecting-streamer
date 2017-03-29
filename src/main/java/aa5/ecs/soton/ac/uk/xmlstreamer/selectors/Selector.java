@@ -47,7 +47,7 @@ public interface Selector {
 		}
 		
 		public Selector compile(CharSequence selector) {
-			return parser.parse(selector).<Selector>to();
+			return parser.parse(selector).<Selector>cast();
 		}
 	}
 	

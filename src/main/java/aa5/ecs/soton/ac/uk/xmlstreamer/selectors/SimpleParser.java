@@ -127,15 +127,10 @@ public class SimpleParser {
 
 	}
 	
-	public static interface AST {
-		
-		public AST getChild(int i);
-		public void setChild(int i, AST child);
-		public int getChildCount();
-		
-		
+	
+	public static interface Castable {
 		@SuppressWarnings("unchecked")
-		public default <E> E to() {
+		public default <E> E cast() {
 			try {
 				return (E) this;
 			}
@@ -144,9 +139,16 @@ public class SimpleParser {
 			}
 		}
 		
-		public default <E> Optional<E> as() {
-			return Optional.ofNullable(this.to());
+		public default <E> Optional<E> maybe() {
+			return Optional.ofNullable(this.cast());
 		}
+	}
+	
+	public static interface AST extends Castable {
+		
+		public AST getChild(int i);
+		public void setChild(int i, AST child);
+		public int getChildCount();
 		
 		
 		public static class Node implements AST {
