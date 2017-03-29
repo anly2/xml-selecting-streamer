@@ -5,12 +5,14 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
@@ -19,14 +21,13 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
 public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 	
 	/* Properties */
 	
 	private XMLEventReader xmlIterator;
+
+	protected LinkedList<Node> open = new LinkedList<>();
 	
 	
 	/* Constructors */
@@ -104,21 +105,25 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 	
 	/* Functionality */
 	
-	public Element nextDeclared() {
-		return null; //TODO
+	public Element nextSibling() {
+		int depth = open.size();
+		Element element;
+		while ((element = nextDeclared()) != null) {
+			if (element.isClosed() && open.size() == depth)
+				return element;
+		}
+		return null;
 	}
 	
-	public Element nextSibling() {
-		return null; //TODO
+	public Element nextDeclared() {
+		Element element;
+		while ((element = nextTag()) != null) {
+			if (element.isClosed())
+				return element;
+		}
+		return null;
 	}
 
-	
-	/* Implementation */
-	
-	protected Document document;
-	protected LinkedList<Element> parents = new LinkedList<>();
-	protected List<XMLEvent> buffer = new LinkedList<>();
-	
 	public Element nextTag() {
 		while (xmlIterator.hasNext()) {
 			XMLEvent event;
@@ -129,50 +134,134 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 				throw new XMLStreamerException(exc);
 			}
 			
-			
-			if (event.isStartDocument()) {
-				try {
-					document = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-					continue;
-				}
-				catch (ParserConfigurationException exc) {
-					throw new IllegalStateException(exc);
-				}
-			}
-			
-			if (event.isStartElement() || event.isEndElement()) {
-				Element element = asElement(event);
-				buffer.clear();
+
+			if (event.isStartElement()) {
+				Node element = asElement(event);
+				open.push(element);
 				return element;
 			}
 			
-			buffer.add(event);
+			if (event.isEndElement()) {
+				Node element = open.pop();
+				element.close();
+				
+				if (!open.isEmpty())
+					open.peek().appendChild(element);
+					
+				return element;
+			}
+			
+			if (event.isCharacters()) {
+				open.peek().appendChild(new Text(event.asCharacters().getData()));
+			}
 		}
 		return null;
 	}
 	
-	@SuppressWarnings("unchecked")
-	protected Element asElement(XMLEvent event) {
-		if (event.isStartElement()) {
-			StartElement start = event.asStartElement();
-			Element element = document.createElement(start.getName().getLocalPart());
-			
-			start.getAttributes().forEachRemaining(a -> {
-				Attribute atr = ((Attribute) a);
-				element.setAttribute(atr.getName().getLocalPart(), atr.getValue());
-			});
-			
-			return element;
+	
+	/* Element Classes */
+	
+	protected static class Node implements Element {
+		private final String tag;
+		private Map<String, Object> attributes = new HashMap<>();
+		private List<Element> children = new LinkedList<>();
+		private boolean isClosed = false;
+		
+		public Node(String tag) {
+			this.tag = tag;
 		}
 		
-		if (event.isEndElement()) {
-			//TODO consume buffer ?!?!
+		public String getTag() {
+			return this.tag;
+		}
+		
+		public String getText() {
+			StringBuilder sb = new StringBuilder();
+			for (Element child : children) {
+				sb.append(child.getText());
+				sb.append(" ");
+			}
+			return sb.toString();
+		}
+		
+		public Object getAttribute(String attr) {
+			return this.attributes.get(attr);
+		}
+		
+		public Collection<Element> getChildren() {
+			return this.children;
+		}
+		
+		public boolean isClosed() {
+			return this.isClosed;
+		}
+		
+		
+		void appendChild(Element child) {
+			this.children.add(child);
+		}
+		
+		void setAttribute(String attr, Object value) {
+			this.attributes.put(attr, value);
+		}
+		
+		void close() {
+			this.isClosed = true;
+		}
+	}
+
+	protected static class Text implements Element {
+		private final String text;
+		
+		public Text(String text) {
+			this.text = text;
+		}
+		
+		public String getText() {
+			return this.text;
+		}
+		
+		
+		public String getTag() {
+			return "";
+		}
+		
+		public Object getAttribute(String attr) {
 			return null;
 		}
 		
-		return null;
+		@SuppressWarnings("unchecked")
+		public Collection<Element> getChildren() {
+			return Collections.EMPTY_SET;
+		}
+		
+		public boolean isClosed() {
+			return true;
+		}
+	}
+
+	
+	
+	/* Helper Methods */
+	
+	@SuppressWarnings("unchecked")
+	protected Node asElement(XMLEvent event) {
+		if (!event.isStartElement())
+			return null;
+		
+		StartElement start = event.asStartElement();
+		Node element = new Node(start.getName().getLocalPart());
+		
+		start.getAttributes().forEachRemaining(a -> {
+			Attribute atr = ((Attribute) a);
+			element.setAttribute(atr.getName().getLocalPart(), atr.getValue());
+		});
+		
+		return element;
 	}
 	
+	
+	/* Exceptions */
 	
 	public static class XMLStreamerException extends RuntimeException {
 		public XMLStreamerException(XMLStreamException exc) {
