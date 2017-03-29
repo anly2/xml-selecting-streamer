@@ -72,6 +72,11 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	public void off(Consumer<Element> action) {
 		actions.forEach((selector, actions) -> actions.remove(action));
 	}
+	
+	
+	/* Hooks */
+	
+	
 
 	
 	/* Terminal operations */
