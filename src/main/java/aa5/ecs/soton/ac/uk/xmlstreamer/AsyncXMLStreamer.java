@@ -19,7 +19,7 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	/* Properties */
 
 	private Map<String, Set<Consumer<Element>>> actions = new HashMap<>();
-	private Selector.Compiler compiler = new Selector.Compiler(this);
+	private Selector.Compiler compiler = new Selector.Compiler();
 	
 	
 	/* Constructors */
@@ -58,7 +58,7 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 		if (acts.contains(action))
 			return;
 			
-		sel.attach();
+		sel.attach(this);
 		acts.add(action);
 	}
 	

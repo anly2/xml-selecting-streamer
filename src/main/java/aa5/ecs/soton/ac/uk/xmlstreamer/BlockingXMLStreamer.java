@@ -62,7 +62,7 @@ public class BlockingXMLStreamer extends AsyncXMLStreamer {
 	@Override
 	public void off(String selector, Consumer<Element> action) {
 		Optional.ofNullable(selectors().asMap().get(selector))
-			.ifPresent(sel -> sel.detach());
+			.ifPresent(sel -> sel.detach(this));
 		super.off(selector, action);
 	}
 	
@@ -89,12 +89,12 @@ public class BlockingXMLStreamer extends AsyncXMLStreamer {
 		
 		public SelectorRegistry register(String selector) {
 			if (selectors.containsKey(selector)) {
-				selectors.get(selector).attach(); //may be compiled but detached
+				selectors.get(selector).attach(BlockingXMLStreamer.this); //may be compiled but detached
 				return this;
 			}
 			
 			Selector sel = compiler().compile(selector);
-			sel.attach();
+			sel.attach(BlockingXMLStreamer.this);
 			
 			return this;
 		}

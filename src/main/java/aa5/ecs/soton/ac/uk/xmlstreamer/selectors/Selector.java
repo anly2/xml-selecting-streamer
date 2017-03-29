@@ -3,22 +3,19 @@ package aa5.ecs.soton.ac.uk.xmlstreamer.selectors;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 
 import aa5.ecs.soton.ac.uk.xmlstreamer.AsyncXMLStreamer;
-import aa5.ecs.soton.ac.uk.xmlstreamer.Element;
 import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.SimpleParser.AST;
 import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.SimpleParser.Builder;
 
 public interface Selector {
-	public void attach();
-	public void detach();
-	public Selector on(Consumer<Element> action);
+	public void attach(AsyncXMLStreamer streamer);
+	public void detach(AsyncXMLStreamer streamer);
 	public String getSelector();
 
 	public static void main(String[] args) {
 		String input = "#main .title ~ ul > li:not(a) + [href] ~ a#target.link[href^=\"https\"]";
-		Selector root = new Selector.Compiler(null).compile(input);
+		Selector root = new Selector.Compiler().compile(input);
 		System.out.println(root);
 	}
 
@@ -28,9 +25,9 @@ public interface Selector {
 	public static class Compiler {
 		private SimpleParser parser;
 		
-		public Compiler(AsyncXMLStreamer streamer) {
+		public Compiler() {
 			
-			final Selector.Factory s = new Selector.Factory(streamer);
+			final Selector.Factory s = new Selector.Factory();
 			parser = new Builder()
 				.rule("\\s*+"+ "(\\S++)"+"\\s*+"+   "~"    +"\\s*+" +"(.*+)", m -> s.selSibling())
 				.rule("\\s*+"+ "(\\S++)"+"\\s*+"+  "\\+"   +"\\s*+" +"(.*+)", m -> s.selImmediateSibling())
@@ -40,6 +37,8 @@ public interface Selector {
 				.rule("\\s*+"+ "([^\\s#]++)?"   + "\\#([\\w\\-]++)"     +"\\s*+", m -> s.selAttrId(m.group(2)), 2)
 				.rule("\\s*+"+ "([^\\s\\.]++)?" + "\\.([\\w\\-]++)"     +"\\s*+", m -> s.selAttrClass(m.group(2)), 2)
 				.rule("\\s*+"+                    "([a-zA-Z]\\w*+)"     +"\\s*+", m -> s.selTag(m.group()), 1)
+				.rule("\\s*+"+ "([^\\s:]++)?"   + ":before" +"\\s*+", m -> s.selTraitBefore())
+				.rule("\\s*+"+ "([^\\s:]++)?"   + ":after"  +"\\s*+", m -> s.selTraitAfter())
 				.rule("\\s*+"+ "([^\\s:]++)?"   + ":not\\(([^\\)]++)\\)", m -> s.selTraitNot())
 				.rule("\\*", m -> s.selAny())
 				.build();
@@ -54,12 +53,6 @@ public interface Selector {
 	/* Bound Factory */
 	
 	public static class Factory {
-		private AsyncXMLStreamer streamer;
-
-		public Factory(AsyncXMLStreamer xmlStreamer) {
-			this.streamer = xmlStreamer;
-		}
-		
 		
 		/* Selector types */
 		
@@ -69,11 +62,6 @@ public interface Selector {
 			public SelectorNode(String raw, int childrenCount) {
 				super(array(childrenCount));
 				this.raw = raw;
-			}
-
-			public Selector on(Consumer<Element> action) {
-				streamer.on(getSelector(), action);
-				return this;
 			}
 
 			public String getSelector() {
@@ -90,11 +78,6 @@ public interface Selector {
 			
 			public SelectorLeaf(String raw) {
 				this.raw = raw;
-			}
-
-			public Selector on(Consumer<Element> action) {
-				streamer.on(getSelector(), action);
-				return this;
 			}
 
 			public String getSelector() {
@@ -123,21 +106,21 @@ public interface Selector {
 		
 		public AST selAny() {
 			return new SelectorLeaf("*") {
-				public void attach() {
+				public void attach(AsyncXMLStreamer streamer) {
 //					streamer.
 				}
 
-				public void detach() {
+				public void detach(AsyncXMLStreamer streamer) {
 				}
 			};
 		}
 		
 		public AST selTag(String tag) {
 			return new SelectorLeaf(tag) {
-				public void attach() {
+				public void attach(AsyncXMLStreamer streamer) {
 				}
 
-				public void detach() {
+				public void detach(AsyncXMLStreamer streamer) {
 				}
 			};
 		}
@@ -145,45 +128,45 @@ public interface Selector {
 		
 		public AST selAttribute(String attr) {
 			return new SelectorNode("["+attr+"]", 1) {
-				public void attach() {
+				public void attach(AsyncXMLStreamer streamer) {
 				}
 
-				public void detach() {
+				public void detach(AsyncXMLStreamer streamer) {
 				}
 			
 				@Override
-				public String toString() {
-					return any(getChild(0)) + getSelector();
+				public String getSelector() {
+					return any(getChild(0)) + super.getSelector();
 				}
 			};
 		}
 
 		public AST selAttrId(String id) {
 			return new SelectorNode("#"+id, 1) {
-				public void attach() {
+				public void attach(AsyncXMLStreamer streamer) {
 				}
 
-				public void detach() {
+				public void detach(AsyncXMLStreamer streamer) {
 				}
 
 				@Override
-				public String toString() {
-					return any(getChild(0)) + getSelector();
+				public String getSelector() {
+					return any(getChild(0)) + super.getSelector();
 				}
 			};
 		}
 		
 		public AST selAttrClass(String cls) {
 			return new SelectorNode("."+cls, 1) {
-				public void attach() {
+				public void attach(AsyncXMLStreamer streamer) {
 				}
 
-				public void detach() {
+				public void detach(AsyncXMLStreamer streamer) {
 				}
 
 				@Override
-				public String toString() {
-					return any(getChild(0)) + getSelector();
+				public String getSelector() {
+					return any(getChild(0)) + super.getSelector();
 				}
 			};
 		}
@@ -191,30 +174,30 @@ public interface Selector {
 		
 		public AST selDescendent() {
 			return new SelectorNode("	", 2) {
-				public void attach() {
+				public void attach(AsyncXMLStreamer streamer) {
 				}
 				
-				public void detach() {
+				public void detach(AsyncXMLStreamer streamer) {
 				}
 
 				@Override
-				public String toString() {
-					return getChild(0) + getSelector() + getChild(1);
+				public String getSelector() {
+					return getChild(0) + super.getSelector() + getChild(1);
 				}
 			};
 		}
 
 		public AST selImmediateDescendent() {
 			return new SelectorNode(">", 2) {
-				public void attach() {
+				public void attach(AsyncXMLStreamer streamer) {
 				}
 				
-				public void detach() {
+				public void detach(AsyncXMLStreamer streamer) {
 				}
 
 				@Override
-				public String toString() {
-					return getChild(0) + getSelector() + getChild(1);
+				public String getSelector() {
+					return getChild(0) + super.getSelector() + getChild(1);
 				}
 			};
 		}
@@ -222,45 +205,76 @@ public interface Selector {
 		
 		public AST selSibling() {
 			return new SelectorNode("~", 2) {
-				public void attach() {
+				public void attach(AsyncXMLStreamer streamer) {
 				}
 				
-				public void detach() {
+				public void detach(AsyncXMLStreamer streamer) {
 				}
 
 				@Override
-				public String toString() {
-					return getChild(0) + getSelector() + getChild(1);
+				public String getSelector() {
+					return getChild(0) + super.getSelector() + getChild(1);
 				}
 			};
 		}
 
 		public AST selImmediateSibling() {
 			return new SelectorNode("+", 2) {
-				public void attach() {
+				public void attach(AsyncXMLStreamer streamer) {
 				}
 				
-				public void detach() {
+				public void detach(AsyncXMLStreamer streamer) {
 				}
 
 				@Override
-				public String toString() {
-					return getChild(0) + getSelector() + getChild(1);
+				public String getSelector() {
+					return getChild(0) + super.getSelector() + getChild(1);
 				}
 			};
 		}
 
 		
-		public AST selTraitNot() {
-			return new SelectorNode(":not()", 2) {
-				public void attach() {
+		public AST selTraitBefore() {
+			return new SelectorNode(":before", 1) {
+				public void attach(AsyncXMLStreamer streamer) {
 				}
-				
-				public void detach() {
+
+				public void detach(AsyncXMLStreamer streamer) {
 				}
 
 				@Override
-				public String toString() {
+				public String getSelector() {
+					return any(getChild(0)) + super.getSelector();
+				}
+			};
+		}
+
+		public AST selTraitAfter() {
+			return new SelectorNode(":after", 1) {
+				public void attach(AsyncXMLStreamer streamer) {
+				}
+
+				public void detach(AsyncXMLStreamer streamer) {
+				}
+
+				@Override
+				public String getSelector() {
+					return any(getChild(0)) + super.getSelector();
+				}
+			};
+		}
+		
+		
+		public AST selTraitNot() {
+			return new SelectorNode(":not()", 2) {
+				public void attach(AsyncXMLStreamer streamer) {
+				}
+				
+				public void detach(AsyncXMLStreamer streamer) {
+				}
+
+				@Override
+				public String getSelector() {
 					return getChild(0) + ":not(" + getChild(1) + ")";
 				}
 			};
