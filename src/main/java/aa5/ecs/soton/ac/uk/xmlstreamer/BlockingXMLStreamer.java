@@ -93,8 +93,8 @@ public class BlockingXMLStreamer extends AsyncXMLStreamer {
 				return this;
 			}
 			
-			Selector sel = compiler().compile(selector);
-			sel.attach(BlockingXMLStreamer.this);
+			Selector sel = compiler(selector);
+			sel.attach();
 			
 			return this;
 		}

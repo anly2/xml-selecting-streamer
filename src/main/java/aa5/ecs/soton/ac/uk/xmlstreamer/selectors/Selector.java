@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import aa5.ecs.soton.ac.uk.xmlstreamer.AsyncXMLStreamer;
 import aa5.ecs.soton.ac.uk.xmlstreamer.Element;
@@ -11,13 +13,14 @@ import aa5.ecs.soton.ac.uk.xmlstreamer.parser.SimpleParser;
 import aa5.ecs.soton.ac.uk.xmlstreamer.parser.SimpleParser.AST;
 
 public interface Selector {
-	public void attach(AsyncXMLStreamer streamer);
-	public void detach(AsyncXMLStreamer streamer);
+	public void attach();
+	public void detach();
 	public String getSelector();
+	public Consumer<Element> trigger(Consumer<Element> action);
 
 	public static void main(String[] args) {
 		String input = "#main .title ~ ul > li:not(a) + [href] ~ a#target.link[href^=\"https\"]";
-		Selector root = new Selector.Compiler().compile(input);
+		Selector root = new Selector.Compiler(null).compile(input);
 		System.out.println(root);
 	}
 
@@ -27,9 +30,9 @@ public interface Selector {
 	public static class Compiler {
 		private SimpleParser parser;
 		
-		public Compiler() {
+		public Compiler(AsyncXMLStreamer streamer) {
+			final Selector.Factory s = new Selector.Factory(streamer);
 			
-			final Selector.Factory s = new Selector.Factory();
 			parser = new SimpleParser.Builder()
 				.rule("\\s*+"+ "(\\S++)"+"\\s*+"+   "~"    +"\\s*+" +"(.*+)", m -> s.selSibling())
 				.rule("\\s*+"+ "(\\S++)"+"\\s*+"+  "\\+"   +"\\s*+" +"(.*+)", m -> s.selImmediateSibling())
@@ -56,10 +59,17 @@ public interface Selector {
 	
 	public static class Factory {
 		
+		private AsyncXMLStreamer streamer;
+		
+		public Factory(AsyncXMLStreamer streamer) {
+			this.streamer = streamer;
+		}
+		
 		/* Selector types */
 		
-		private abstract class SelectorNode extends AST.Node implements Selector, Consumer<Element> {
+		private abstract class SelectorNode extends AST.Node implements Selector {
 			public String raw;
+			protected Consumer<Element> action;
 			
 			public SelectorNode(String raw, int childrenCount) {
 				super(array(childrenCount));
@@ -75,32 +85,15 @@ public interface Selector {
 			}
 
 			
-			@Override
-			public void attach(AsyncXMLStreamer streamer) {
-				streamer.on(getSelector(), this);
-
-				for (int i=0; i<getChildCount(); i++)
-					getChild(i).<Selector>maybe().ifPresent(s -> s.attach(streamer));
-			}
-
-			@Override
-			public void detach(AsyncXMLStreamer streamer) {
-				streamer.off(getSelector(), this);
-
-				for (int i=0; i<getChildCount(); i++)
-					getChild(i).<Selector>maybe().ifPresent(s -> s.detach(streamer));
-			}
-
-
-			@Override
-			public void accept(Element element) {
-//				if (allChildrenSatisfied() && matches(element))
-//					fire.run();
+			public Consumer<Element> trigger(Consumer<Element> action) {
+				this.action = action;
+				return action;
 			}
 		}
 
 		private abstract class SelectorLeaf extends AST.Leaf implements Selector, Consumer<Element> {
 			public String raw;
+			protected Consumer<Element> action;
 			
 			public SelectorLeaf(String raw) {
 				this.raw = raw;
@@ -115,19 +108,66 @@ public interface Selector {
 				return getSelector();
 			}
 
+
 			@Override
-			public void attach(AsyncXMLStreamer streamer) {
-				streamer.on(getSelector(), this);
+			public Consumer<Element> trigger(Consumer<Element> action) {
+				this.action = action;
+				return action;
+			}
+			
+			
+			public void attach() {
+				streamer.onTagStart(this);
+			}
+
+			public void detach() {
+				streamer.onTagEnd(this);
+			}
+		}
+
+		private abstract class SimpleSelectorNode extends SelectorNode {
+			public SimpleSelectorNode(String raw) {
+				super(raw, 1);
+			}
+
+			public void attach() {
+				Selector inner = getChild(0).cast();
+				
+				if (getChild(0) == null) {
+					AST e = selAny();
+					setChild(0, e);
+					inner = e.cast();
+				}
+				
+				inner.trigger(element -> {
+					if (matches(element))
+						action.accept(element);
+				});
+				inner.attach();
+			}
+
+			public void detach() {
+				getChild(0).<Selector>cast().detach();
+			}
+
+			
+			protected abstract boolean matches(Element element);
+			
+			
+			@Override
+			public String getSelector() {
+				return any(getChild(0)) + super.getSelector();
+			}
+		}
+		
+		private abstract class BinarySelectorNode extends SelectorNode {
+			public BinarySelectorNode(String raw) {
+				super(raw, 2);
 			}
 
 			@Override
-			public void detach(AsyncXMLStreamer streamer) {
-				streamer.off(getSelector(), this);
-			}
-
-			@Override
-			public void accept(Element t) {
-				//TODO: REMOVE AND DO
+			public String getSelector() {
+				return getChild(0) + super.getSelector() + getChild(1);
 			}
 		}
 		
@@ -147,97 +187,86 @@ public interface Selector {
 		
 		public AST selAny() {
 			return new SelectorLeaf("*") {
-				public void attach(AsyncXMLStreamer streamer) {
-				}
-
-				public void detach(AsyncXMLStreamer streamer) {
-					streamer.off(getSelector(), this);
-				}
-			
-				public void accept(Element e) {
-					System.out.println(e.getTag());
+				@Override
+				public void accept(Element element) {
+					action.accept(element);
 				}
 			};
 		}
 		
 		public AST selTag(String tag) {
 			return new SelectorLeaf(tag) {
-				public void attach(AsyncXMLStreamer streamer) {
-				}
-
-				public void detach(AsyncXMLStreamer streamer) {
+				@Override
+				public void accept(Element element) {
+					if (element.getTag().equalsIgnoreCase(tag))
+						action.accept(element);
 				}
 			};
 		}
 
 		
 		public AST selAttribute(String attr) {
-			return new SelectorNode("["+attr+"]", 1) {
-				public void attach(AsyncXMLStreamer streamer) {
-				}
-
-				public void detach(AsyncXMLStreamer streamer) {
-				}
-			
-				@Override
-				public String getSelector() {
-					return any(getChild(0)) + super.getSelector();
+			return new SimpleSelectorNode("["+attr+"]") {
+				protected boolean matches(Element element) {
+					return (element.getAttribute(attr) != null);
 				}
 			};
 		}
 
 		public AST selAttrId(String id) {
-			return new SelectorNode("#"+id, 1) {
-				public void attach(AsyncXMLStreamer streamer) {
-				}
-
-				public void detach(AsyncXMLStreamer streamer) {
-				}
-
-				@Override
-				public String getSelector() {
-					return any(getChild(0)) + super.getSelector();
+			return new SimpleSelectorNode("#"+id) {
+				protected boolean matches(Element element) {
+					final Object v = element.getAttribute("id");
+					return (v != null && id.equals(v));
 				}
 			};
 		}
 		
 		public AST selAttrClass(String cls) {
-			return new SelectorNode("."+cls, 1) {
-				public void attach(AsyncXMLStreamer streamer) {
-				}
-
-				public void detach(AsyncXMLStreamer streamer) {
-				}
-
-				@Override
-				public String getSelector() {
-					return any(getChild(0)) + super.getSelector();
+			return new SimpleSelectorNode("."+cls) {
+				private Predicate<String> pred = Pattern.compile("(?:^|\\s)\\Q"+cls+"\\E(?:$|\\S)").asPredicate();
+				protected boolean matches(Element element) {
+					final Object v = element.getAttribute("class");
+					return (v != null && pred.test(v.toString()));
 				}
 			};
 		}
 
 		
 		public AST selDescendent() {
-			return new SelectorNode("	", 2) {
-				public void attach(AsyncXMLStreamer streamer) {
-				}
+
+			//TODO
+			return new BinarySelectorNode("	") {
+				private Selector startTracker = selTraitBefore().cast();
+				private Selector endTracker = selTraitAfter().cast();
+				private int acceptableParents = 0;
 				
-				public void detach(AsyncXMLStreamer streamer) {
+				public void attach() {
+					getChild(0).<Selector>cast().trigger(e -> {
+						acceptableParents++;
+						onClose(e, e_ -> acceptableParents--);
+					});
+					
+					startTracker.attach();
+					endTracker.attach();
 				}
 
-				@Override
-				public String getSelector() {
-					return getChild(0) + super.getSelector() + getChild(1);
+				public void detach() {
+					startTracker.detach();
+					endTracker.detach();
+				}
+				
+				private void onClose(Element e, Consumer<Element> a) {
 				}
 			};
 		}
 
 		public AST selImmediateDescendent() {
 			return new SelectorNode(">", 2) {
-				public void attach(AsyncXMLStreamer streamer) {
+				public void attach() {
 				}
-				
-				public void detach(AsyncXMLStreamer streamer) {
+
+				public void detach() {
 				}
 
 				@Override
@@ -250,10 +279,10 @@ public interface Selector {
 		
 		public AST selSibling() {
 			return new SelectorNode("~", 2) {
-				public void attach(AsyncXMLStreamer streamer) {
+				public void attach() {
 				}
-				
-				public void detach(AsyncXMLStreamer streamer) {
+
+				public void detach() {
 				}
 
 				@Override
@@ -265,10 +294,10 @@ public interface Selector {
 
 		public AST selImmediateSibling() {
 			return new SelectorNode("+", 2) {
-				public void attach(AsyncXMLStreamer streamer) {
+				public void attach() {
 				}
-				
-				public void detach(AsyncXMLStreamer streamer) {
+
+				public void detach() {
 				}
 
 				@Override
@@ -281,10 +310,10 @@ public interface Selector {
 		
 		public AST selTraitBefore() {
 			return new SelectorNode(":before", 1) {
-				public void attach(AsyncXMLStreamer streamer) {
+				public void attach() {
 				}
 
-				public void detach(AsyncXMLStreamer streamer) {
+				public void detach() {
 				}
 
 				@Override
@@ -296,10 +325,10 @@ public interface Selector {
 
 		public AST selTraitAfter() {
 			return new SelectorNode(":after", 1) {
-				public void attach(AsyncXMLStreamer streamer) {
+				public void attach() {
 				}
 
-				public void detach(AsyncXMLStreamer streamer) {
+				public void detach() {
 				}
 
 				@Override
@@ -312,10 +341,10 @@ public interface Selector {
 		
 		public AST selTraitNot() {
 			return new SelectorNode(":not()", 2) {
-				public void attach(AsyncXMLStreamer streamer) {
+				public void attach() {
 				}
-				
-				public void detach(AsyncXMLStreamer streamer) {
+
+				public void detach() {
 				}
 
 				@Override

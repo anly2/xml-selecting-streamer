@@ -4,8 +4,9 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -29,8 +30,10 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 
 	/* Properties */
 
-	private ActionMap<Consumer<Element>> actions = new ActionMap<>();
-	private Selector.Compiler compiler = new Selector.Compiler();
+	private Set<Consumer<Element>> actionsOpen  = new LinkedHashSet<>();
+	private Set<Consumer<Element>> actionsClose = new LinkedHashSet<>();
+	private Map<Consumer<Element>, Set<Selector>> activators = new HashMap<>();
+	private Selector.Compiler compiler = new Selector.Compiler(this);
 	
 	
 	/* Constructors */
@@ -54,79 +57,79 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	
 	/* Accessors */
 	
-	protected Selector.Compiler compiler() {
-		return this.compiler;
+	protected Selector compile(String selector) {
+		return this.compiler.compile(selector);
 	}
 	
 	
-	/* ActionMap Helper Class */
+	/* Rudimentary Functionality */
 	
-	protected class ActionMap<ACTION> extends HashMap<String, Set<ACTION>> {
-		private Set<String> activated = new HashSet<>();
-		
-		public void add(String key, ACTION action) {
-			if (!isActivated(key))
-				activate(key);
-				
-			super.computeIfAbsent(key, k -> new LinkedHashSet<>())
-				.add(action);
-		}
-		
-		public boolean remove(String key, ACTION action) {
-			Set<ACTION> actions = super.get(key);
-			
-			if (actions == null)
-				return false;
-			
-			boolean result = actions.remove(action);
-			
-			if (actions.isEmpty())
-				deactivate(key);
-			
-			return result;
-		}
-		
-		
-		protected boolean isActivated(String key) {
-			return activated.contains(key);
-		}
-		
-		protected void activate(String key) {
-			Selector selector = compiler().compile(key);
-			
-			activated.add(key);
-			selector.attach(AsyncXMLStreamer.this);
-		}
-		
-		protected void deactivate(String key) {
-			//detach selectors
-			//	keep a reference to them?!
-			//	don't detach a sub-selector if another action relies on it as activator
-			activated.remove(key);
-		}
+	public Consumer<Element> onTagStart(Consumer<Element> action) {
+		actionsOpen.add(action);
+		return action;
+	}
+	
+	public boolean offTagStart(Consumer<Element> action) {
+		return actionsOpen.remove(action);
+	}
+	
+	
+	public Consumer<Element> onTagEnd(Consumer<Element> action) {
+		actionsClose.add(action);
+		return action;
+	}
+	
+	public boolean offTagEnd(Consumer<Element> action) {
+		return actionsClose.remove(action);
 	}
 	
 	
 	/* Functionality */
 
 	public Consumer<Element> on(String selector, Consumer<Element> action) {
-		actions.add(selector, action);
+		Selector sel = compile(selector);
+		
+		sel.trigger(action);
+		sel.attach();
+		
+		activators
+			.computeIfAbsent(action, k -> new LinkedHashSet<>())
+			.add(sel);
+		
 		return action;
+	}
+
+	public void off(Consumer<Element> action) {
+		activators.computeIfPresent(action, (a, sels) -> {
+			sels.forEach(Selector::detach);
+			return null;
+		});
 	}
 	
 	public void off(String selector, Consumer<Element> action) {
-		actions.remove(selector, action);
+		if (!activators.containsKey(action))
+			return;
+		
+		if (!remove(selector, action))
+			remove(compile(selector).getSelector(), action);
 	}
-	
-	public void off(Consumer<Element> action) {
-		actions.forEach((selector, v) -> actions.remove(selector, action));
-	}
-	
-	
-	protected void fire(String selector, Element element) {
-		Set<Consumer<Element>> acts = actions.get(selector);
-		if (acts != null)
-			acts.forEach(action -> action.accept(element));
+
+	private boolean remove(String selector, Consumer<Element> action) {
+		boolean found = false;
+		
+		Iterator<Selector> selsIt = activators.get(action).iterator();
+		while (selsIt.hasNext()) {
+			Selector s = selsIt.next();
+			
+			if (!s.getSelector().equals(selector))
+				continue;
+			
+			s.detach();
+			selsIt.remove();
+			found = true;
+		}
+		
+		return found;
 	}
 	
 	
@@ -135,14 +138,17 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	public Element nextTag() {
 		Element element = super.nextTag();
 		
-		if (element == null) return null;
+		if (element == null)
+			return null;
 		
-		if (element.isClosed())
-			fire("*:after", element);
-		else
-			fire("*:before", element);
+		fire(element, element.isClosed());
 		
 		return element;
+	}
+	
+	private void fire(Element element, boolean closes) {
+		Set<Consumer<Element>> actions = closes? actionsClose : actionsOpen;
+		actions.forEach(a -> a.accept(element));
 	}
 
 	
