@@ -165,7 +165,8 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 		private final String tag;
 		private Map<String, Object> attributes = new HashMap<>();
 		private List<Element> children = new LinkedList<>();
-		private boolean isClosed = false;
+		private Runnable doComplete = null;
+
 		
 		public Node(String tag) {
 			this.tag = tag;
@@ -175,12 +176,19 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 			return this.tag;
 		}
 		
+		/**
+		 * POTENTIALLY BLOCKING!!!
+		 */
 		public String getText() {
+			if (!isClosed())
+				doComplete.run(); //BLOCKING DRAIN!!!
+
 			StringBuilder sb = new StringBuilder();
 			for (Element child : children) {
 				sb.append(child.getText());
 				sb.append(" ");
 			}
+			sb.deleteCharAt(sb.length()-1);
 			return sb.toString();
 		}
 		
@@ -193,7 +201,7 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 		}
 		
 		public boolean isClosed() {
-			return this.isClosed;
+			return this.doComplete == null;
 		}
 		
 		
@@ -206,7 +214,8 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 		}
 		
 		void close() {
-			this.isClosed = true;
+			//## dont execute doComplete - it is probably already done at this point
+			this.doComplete = null;
 		}
 	}
 
@@ -257,6 +266,16 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 			element.setAttribute(atr.getName().getLocalPart(), atr.getValue());
 		});
 		
+		element.doComplete = () -> {
+			Element e;
+			while ((e = nextTag()) != null) {
+				if (e == element) {
+					element.close(); //## obsolete, but can save from trouble when doComplete is (tried to be) repeatedly called
+					return;
+				}
+			}
+		};
+
 		return element;
 	}
 	

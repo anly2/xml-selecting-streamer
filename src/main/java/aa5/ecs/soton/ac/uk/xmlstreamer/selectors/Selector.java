@@ -50,7 +50,8 @@ public interface Selector {
 		}
 		
 		public Selector compile(CharSequence selector) {
-			return parser.parse(selector).<Selector>cast();
+			Selector sel = parser.parse(selector).<Selector>cast();
+			return sel;
 		}
 	}
 	
@@ -121,7 +122,7 @@ public interface Selector {
 			}
 
 			public void detach() {
-				streamer.onTagEnd(this);
+				streamer.offTagStart(this);
 			}
 		}
 
@@ -234,29 +235,44 @@ public interface Selector {
 
 		
 		public AST selDescendent() {
-
-			//TODO
 			return new BinarySelectorNode("	") {
-				private Selector startTracker = selTraitBefore().cast();
-				private Selector endTracker = selTraitAfter().cast();
-				private int acceptableParents = 0;
+				private int depth = -1;
+				private Consumer<Element> startTracker;
+				private Consumer<Element> endTracker = e -> { if (depth >= 0) depth--; };
 				
 				public void attach() {
-					getChild(0).<Selector>cast().trigger(e -> {
-						acceptableParents++;
-						onClose(e, e_ -> acceptableParents--);
+					startTracker = streamer.onTagStart(e -> {
+						if (depth >= 0)
+							depth++;
+					});
+
+					endTracker = streamer.onTagEnd(e -> {
+						if (depth >= 0)
+							depth--;
+					});
+
+
+					//## the trackers need to be attacked first, lest off-by-one error
+					final Selector selParent = getChild(0).<Selector>cast();
+					selParent.attach();
+					selParent.trigger(e -> {
+						depth = 0;
 					});
 					
-					startTracker.attach();
-					endTracker.attach();
+					final Selector selElement = getChild(1).<Selector>cast();
+					selElement.attach();
+					selElement.trigger(e -> {
+						if (depth > 0)
+							action.accept(e);
+					});
 				}
 
 				public void detach() {
-					startTracker.detach();
-					endTracker.detach();
-				}
-				
-				private void onClose(Element e, Consumer<Element> a) {
+					streamer.offTagStart(startTracker);
+					streamer.offTagEnd(endTracker);
+
+					getChild(0).<Selector>cast().detach();
+					getChild(1).<Selector>cast().detach();
 				}
 			};
 		}
