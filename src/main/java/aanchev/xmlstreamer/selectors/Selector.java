@@ -34,10 +34,10 @@ public interface Selector {
 			final Selector.Factory s = new Selector.Factory(streamer);
 			
 			parser = new SimpleParser.Builder()
-				.rule("\\s*+"+ "(\\S++)"+"\\s*+"+   "~"    +"\\s*+" +"(.*+)", m -> s.selSibling())
-				.rule("\\s*+"+ "(\\S++)"+"\\s*+"+  "\\+"   +"\\s*+" +"(.*+)", m -> s.selImmediateSibling())
-				.rule("\\s*+"+ "(\\S++)"+"\\s*+"+   ">"    +"\\s*+" +"(.*+)", m -> s.selImmediateDescendent())
-				.rule("\\s*+"+ "(\\S++)"+         "\\s++"           +"(.++)", m -> s.selDescendent())
+				.rule("\\s*+"+ "([^\\s~]++)"   +"\\s*+"+   "~"    +"\\s*+" +"(.*+)", m -> s.selSibling())
+				.rule("\\s*+"+ "([^\\s\\+]++)" +"\\s*+"+  "\\+"   +"\\s*+" +"(.*+)", m -> s.selImmediateSibling())
+				.rule("\\s*+"+ "([^\\s>]++)"   +"\\s*+"+   ">"    +"\\s*+" +"(.*+)", m -> s.selImmediateDescendent())
+				.rule("\\s*+"+ "(\\S++)"+                "\\s++"           +"(.++)", m -> s.selDescendent())
 				.rule("\\s*+"+ "([^\\[\\]]++)?" + "\\[([^\\s\\]]++)\\]" +"\\s*+", m -> s.selAttribute(m.group(2)), 2)
 				.rule("\\s*+"+ "([^\\s#]++)?"   + "\\#([\\w\\-]++)"     +"\\s*+", m -> s.selAttrId(m.group(2)), 2)
 				.rule("\\s*+"+ "([^\\s\\.]++)?" + "\\.([\\w\\-]++)"     +"\\s*+", m -> s.selAttrClass(m.group(2)), 2)
@@ -271,6 +271,9 @@ public interface Selector {
 				public void detach() {
 					streamer.offTagStart(startTracker);
 					streamer.offTagEnd(endTracker);
+					
+					startTracker = null;
+					endTracker = null;
 
 					getChild(0).<Selector>cast().detach();
 					getChild(1).<Selector>cast().detach();
@@ -279,16 +282,47 @@ public interface Selector {
 		}
 
 		public AST selImmediateDescendent() {
-			return new SelectorNode(">", 2) {
+			return new BinarySelectorNode(">") {
+				private int depth = -1;
+				private Consumer<Element> startTracker;
+				private Consumer<Element> endTracker;
+				
 				public void attach() {
+					startTracker = streamer.onTagStart(e -> {
+						if (depth >= 0)
+							depth++;
+					});
+
+					endTracker = streamer.onTagEnd(e -> {
+						if (depth >= 0)
+							depth--;
+					});
+
+
+					//## the trackers need to be attached first, lest off-by-one errors
+					final Selector selParent = getChild(0).<Selector>cast();
+					selParent.attach();
+					selParent.trigger(e -> {
+						depth = 0;
+					});
+					
+					final Selector selElement = getChild(1).<Selector>cast();
+					selElement.attach();
+					selElement.trigger(e -> {
+						if (depth == 1)
+							action.accept(e);
+					});
 				}
 
 				public void detach() {
-				}
+					streamer.offTagStart(startTracker);
+					streamer.offTagEnd(endTracker);
+					
+					startTracker = null;
+					endTracker = null;
 
-				@Override
-				public String getSelector() {
-					return getChild(0) + super.getSelector() + getChild(1);
+					getChild(0).<Selector>cast().detach();
+					getChild(1).<Selector>cast().detach();
 				}
 			};
 		}
