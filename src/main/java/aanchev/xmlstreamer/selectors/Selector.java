@@ -256,7 +256,7 @@ public interface Selector {
 					final Selector selParent = getChild(0).<Selector>cast();
 					selParent.attach();
 					selParent.trigger(e -> {
-						if (depth >= 0)
+						if (depth < 0)
 							depth = 0;
 					});
 					

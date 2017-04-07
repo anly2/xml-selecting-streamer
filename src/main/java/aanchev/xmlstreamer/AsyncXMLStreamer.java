@@ -146,6 +146,8 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 		return element;
 	}
 	
+	//#ERROR completable element nodes  trigger sequent hooks, as they should
+	//		  but that delays the at-the-time triggered event
 	private void fire(Element element, boolean closes) {
 		Set<Consumer<Element>> actions = closes? actionsClose : actionsOpen;
 		actions.forEach(a -> a.accept(element));
