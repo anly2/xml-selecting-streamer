@@ -2,6 +2,8 @@ package aanchev.xmlstreamer.selectors;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -329,16 +331,58 @@ public interface Selector {
 		
 		
 		public AST selSibling() {
-			return new SelectorNode("~", 2) {
+			return new BinarySelectorNode("~") {
+				private int depth = -1;
+				private Consumer<Element> startTracker;
+				private Consumer<Element> endTracker;
+				private Deque<Integer> occurances = new LinkedList<>();
+				
 				public void attach() {
+					//## order of attachments matters!
+
+					//## attach ELEMENT first!
+					final Selector selElement = getChild(1).<Selector>cast();
+					selElement.attach();
+					selElement.trigger(e -> {
+						if (depth >= 0 && occurances.peek() == depth)
+							action.accept(e);
+					});
+					
+					//## attach SIBLING second!
+					final Selector selSibling = getChild(0).<Selector>cast();
+					selSibling.attach();
+					selSibling.trigger(e -> {
+						if (depth < 0)
+							depth = 0;
+
+						if (occurances.isEmpty() || occurances.peek() < depth)
+							occurances.push(depth);
+					});
+					
+					//## attach trackers
+					startTracker = streamer.onTagStart(e -> {
+						if (depth >= 0)
+							depth++;
+					});
+
+					endTracker = streamer.onTagEnd(e -> {
+						if (depth >= 0)
+							depth--;
+						
+						if (!occurances.isEmpty() && occurances.peek() > depth)
+							occurances.pop();
+					});
 				}
 
 				public void detach() {
-				}
+					streamer.offTagStart(startTracker);
+					streamer.offTagEnd(endTracker);
+					
+					startTracker = null;
+					endTracker = null;
 
-				@Override
-				public String getSelector() {
-					return getChild(0) + super.getSelector() + getChild(1);
+					getChild(0).<Selector>cast().detach();
+					getChild(1).<Selector>cast().detach();
 				}
 			};
 		}
