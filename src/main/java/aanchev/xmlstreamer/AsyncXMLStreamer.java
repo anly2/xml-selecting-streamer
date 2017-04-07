@@ -3,15 +3,18 @@ package aanchev.xmlstreamer;
 import java.io.File;
 import java.io.InputStream;
 import java.io.Reader;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.xml.stream.XMLEventReader;
 
+import aanchev.parser.Pair;
 import aanchev.xmlstreamer.selectors.Selector;
 
 public class AsyncXMLStreamer extends BasicXMLStreamer {
@@ -35,6 +38,9 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	private Map<Consumer<Element>, Set<Selector>> activators = new HashMap<>();
 	private Selector.Compiler compiler = new Selector.Compiler(this);
 	
+	private Deque<Pair<Element, Boolean>> events = new LinkedList<>();
+	private boolean processingEvent = false;
+
 	
 	/* Constructors */
 	
@@ -146,11 +152,20 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 		return element;
 	}
 	
-	//#ERROR completable element nodes  trigger sequent hooks, as they should
-	//		  but that delays the at-the-time triggered event
-	private void fire(Element element, boolean closes) {
+	private synchronized void fire(Element element, boolean closes) {
+		if (processingEvent) {
+			events.push(new Pair<>(element, closes));
+			return;
+		}
+
+		processingEvent = true;
 		Set<Consumer<Element>> actions = closes? actionsClose : actionsOpen;
 		actions.forEach(a -> a.accept(element));
+
+		processingEvent = false;
+		Pair<Element, Boolean> event = events.pollLast();
+		if (event == null) return;
+		fire(event.left, event.right);
 	}
 
 	
