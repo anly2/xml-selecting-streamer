@@ -9,7 +9,7 @@ import aanchev.xmlstreamer.AsyncXMLStreamer;
 public class AsyncXMLStreamerTest {
 
 	@Test
-	public void test() {
+	public void test1() {
 		String xml = String.join("\n",
 			"<root>",
 			"<title>Index</title>",
@@ -41,7 +41,27 @@ public class AsyncXMLStreamerTest {
 		
 		System.out.println("Testing");
 		streamer.on("book title", e -> System.out.println(e.getTag() + "|"+e.getText()+"|"));
-//		streamer.on("book author", e -> System.out.println(e.getText()));
+		streamer.on("book>author", e -> System.out.println(e.getText()));
+		streamer.drain();
+	}
+
+	@Test
+	public void test2() {
+		String xml = String.join("\n",
+			"<root>",
+			"<book>","</book>",
+			"<book>","</book>",
+			"<book>A","</book>",
+			"",
+			"<section>",
+			"	<book><ref>B1</ref></book>",
+			"</section>",
+			"</root>"
+		);
+		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		
+		System.out.println("Testing");
+		streamer.on("book~book", e -> System.out.println("-["+e.getText()+"]-"));
 		streamer.drain();
 	}
 
