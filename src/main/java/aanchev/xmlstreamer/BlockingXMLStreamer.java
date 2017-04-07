@@ -6,7 +6,6 @@ import java.io.Reader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -14,6 +13,7 @@ import javax.xml.stream.XMLEventReader;
 
 import aanchev.xmlstreamer.selectors.Selector;
 
+//TODO
 public class BlockingXMLStreamer extends AsyncXMLStreamer {
 
 	/* Properties */	
