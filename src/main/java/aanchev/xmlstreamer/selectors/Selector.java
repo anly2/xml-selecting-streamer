@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import aanchev.parser.SimpleParser;
 import aanchev.parser.SimpleParser.AST;
+import aanchev.parser.SimpleParser.Castable;
 import aanchev.xmlstreamer.AsyncXMLStreamer;
 import aanchev.xmlstreamer.Element;
 
@@ -185,6 +186,13 @@ public interface Selector {
 			return o == null? "*" : o.toString();
 		}
 		
+		private static Selector sellink(Castable selector, Consumer<Element> action) {
+			Selector sel = selector.cast();
+			sel.attach();
+			sel.trigger(action);
+			return sel;
+		}
+		
 		
 		/* Selector instance creators */
 		
@@ -243,6 +251,8 @@ public interface Selector {
 				private Consumer<Element> endTracker;
 				
 				public void attach() {
+					//## order of attachments matters! -- trackers first
+					
 					startTracker = streamer.onTagStart(e -> {
 						if (depth >= 0)
 							depth++;
@@ -254,17 +264,14 @@ public interface Selector {
 					});
 
 
-					//## the trackers need to be attached first, lest off-by-one errors
-					final Selector selParent = getChild(0).<Selector>cast();
-					selParent.attach();
-					selParent.trigger(e -> {
+					// attach PARENT selector
+					sellink(getChild(0), e -> {
 						if (depth < 0)
 							depth = 0;
 					});
-					
-					final Selector selElement = getChild(1).<Selector>cast();
-					selElement.attach();
-					selElement.trigger(e -> {
+
+					// attach ELEMENT selector
+					sellink(getChild(1), e -> {
 						if (depth > 0)
 							action.accept(e);
 					});
@@ -290,6 +297,8 @@ public interface Selector {
 				private Consumer<Element> endTracker;
 				
 				public void attach() {
+					//## order of attachments matters! -- trackers first
+					
 					startTracker = streamer.onTagStart(e -> {
 						if (depth >= 0)
 							depth++;
@@ -301,16 +310,13 @@ public interface Selector {
 					});
 
 
-					//## the trackers need to be attached first, lest off-by-one errors
-					final Selector selParent = getChild(0).<Selector>cast();
-					selParent.attach();
-					selParent.trigger(e -> {
+					// attach PARENT selector
+					sellink(getChild(0), e -> {
 						depth = 0;
 					});
 					
-					final Selector selElement = getChild(1).<Selector>cast();
-					selElement.attach();
-					selElement.trigger(e -> {
+					// attach ELEMENT selector
+					sellink(getChild(1), e -> {
 						if (depth == 1)
 							action.accept(e);
 					});
@@ -340,18 +346,14 @@ public interface Selector {
 				public void attach() {
 					//## order of attachments matters!
 
-					//## attach ELEMENT first!
-					final Selector selElement = getChild(1).<Selector>cast();
-					selElement.attach();
-					selElement.trigger(e -> {
+					// attach ELEMENT selector first!
+					sellink(getChild(1), e -> {
 						if (depth >= 0 && occurances.peek() == depth)
 							action.accept(e);
 					});
 					
-					//## attach SIBLING second!
-					final Selector selSibling = getChild(0).<Selector>cast();
-					selSibling.attach();
-					selSibling.trigger(e -> {
+					// attach SIBLING selector second!
+					sellink(getChild(0), e -> {
 						if (depth < 0)
 							depth = 0;
 
@@ -359,7 +361,8 @@ public interface Selector {
 							occurances.push(depth);
 					});
 					
-					//## attach trackers
+					
+					// attach trackers
 					startTracker = streamer.onTagStart(e -> {
 						if (depth >= 0)
 							depth++;
