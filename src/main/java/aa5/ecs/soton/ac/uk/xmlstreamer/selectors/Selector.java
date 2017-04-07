@@ -238,7 +238,7 @@ public interface Selector {
 			return new BinarySelectorNode("	") {
 				private int depth = -1;
 				private Consumer<Element> startTracker;
-				private Consumer<Element> endTracker = e -> { if (depth >= 0) depth--; };
+				private Consumer<Element> endTracker;
 				
 				public void attach() {
 					startTracker = streamer.onTagStart(e -> {
@@ -252,11 +252,12 @@ public interface Selector {
 					});
 
 
-					//## the trackers need to be attacked first, lest off-by-one error
+					//## the trackers need to be attached first, lest off-by-one errors
 					final Selector selParent = getChild(0).<Selector>cast();
 					selParent.attach();
 					selParent.trigger(e -> {
-						depth = 0;
+						if (depth >= 0)
+							depth = 0;
 					});
 					
 					final Selector selElement = getChild(1).<Selector>cast();
