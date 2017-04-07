@@ -1,4 +1,4 @@
-package aa5.ecs.soton.ac.uk.xmlstreamer;
+package aanchev.xmlstreamer;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

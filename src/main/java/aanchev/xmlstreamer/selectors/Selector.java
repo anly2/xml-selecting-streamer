@@ -1,4 +1,4 @@
-package aa5.ecs.soton.ac.uk.xmlstreamer.selectors;
+package aanchev.xmlstreamer.selectors;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -7,10 +7,10 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import aa5.ecs.soton.ac.uk.xmlstreamer.AsyncXMLStreamer;
-import aa5.ecs.soton.ac.uk.xmlstreamer.Element;
-import aa5.ecs.soton.ac.uk.xmlstreamer.parser.SimpleParser;
-import aa5.ecs.soton.ac.uk.xmlstreamer.parser.SimpleParser.AST;
+import aanchev.parser.SimpleParser;
+import aanchev.parser.SimpleParser.AST;
+import aanchev.xmlstreamer.AsyncXMLStreamer;
+import aanchev.xmlstreamer.Element;
 
 public interface Selector {
 	public void attach();

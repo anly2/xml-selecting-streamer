@@ -1,4 +1,4 @@
-package aa5.ecs.soton.ac.uk.xmlstreamer;
+package aanchev.xmlstreamer;
 
 import java.io.File;
 import java.io.InputStream;
@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 
 import javax.xml.stream.XMLEventReader;
 
-import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.Selector;
+import aanchev.xmlstreamer.selectors.Selector;
 
 public class AsyncXMLStreamer extends BasicXMLStreamer {
 	

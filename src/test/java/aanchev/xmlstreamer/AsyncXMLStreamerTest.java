@@ -1,8 +1,10 @@
-package aa5.ecs.soton.ac.uk.xmlstreamer;
+package aanchev.xmlstreamer;
 
 import java.io.StringReader;
 
 import org.junit.Test;
+
+import aanchev.xmlstreamer.AsyncXMLStreamer;
 
 public class AsyncXMLStreamerTest {
 

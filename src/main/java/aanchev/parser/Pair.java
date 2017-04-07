@@ -1,4 +1,4 @@
-package aa5.ecs.soton.ac.uk.xmlstreamer.parser;
+package aanchev.parser;
 
 public class Pair<L, R> {
     public final L left;

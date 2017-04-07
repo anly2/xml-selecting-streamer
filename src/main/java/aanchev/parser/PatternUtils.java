@@ -1,4 +1,4 @@
-package aa5.ecs.soton.ac.uk.xmlstreamer.parser;
+package aanchev.parser;
 
 import static java.util.Arrays.asList;
 

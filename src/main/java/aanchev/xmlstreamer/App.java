@@ -1,4 +1,4 @@
-package aa5.ecs.soton.ac.uk.xmlstreamer;
+package aanchev.xmlstreamer;
 
 /**
  * Hello world!

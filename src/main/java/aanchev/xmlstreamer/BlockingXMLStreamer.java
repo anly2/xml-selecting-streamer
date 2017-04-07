@@ -1,4 +1,4 @@
-package aa5.ecs.soton.ac.uk.xmlstreamer;
+package aanchev.xmlstreamer;
 
 import java.io.File;
 import java.io.InputStream;
@@ -12,7 +12,7 @@ import java.util.function.Consumer;
 
 import javax.xml.stream.XMLEventReader;
 
-import aa5.ecs.soton.ac.uk.xmlstreamer.selectors.Selector;
+import aanchev.xmlstreamer.selectors.Selector;
 
 public class BlockingXMLStreamer extends AsyncXMLStreamer {
 
@@ -61,9 +61,9 @@ public class BlockingXMLStreamer extends AsyncXMLStreamer {
 	
 	@Override
 	public void off(String selector, Consumer<Element> action) {
-		Optional.ofNullable(selectors().asMap().get(selector))
-			.ifPresent(sel -> sel.detach(this));
-		super.off(selector, action);
+//		Optional.ofNullable(selectors().asMap().get(selector))
+//			.ifPresent(sel -> sel.detach(this));
+//		super.off(selector, action);
 	}
 	
 	
@@ -88,13 +88,13 @@ public class BlockingXMLStreamer extends AsyncXMLStreamer {
 		/* Builder functionality */
 		
 		public SelectorRegistry register(String selector) {
-			if (selectors.containsKey(selector)) {
-				selectors.get(selector).attach(BlockingXMLStreamer.this); //may be compiled but detached
-				return this;
-			}
-			
-			Selector sel = compiler(selector);
-			sel.attach();
+//			if (selectors.containsKey(selector)) {
+//				selectors.get(selector).attach(BlockingXMLStreamer.this); //may be compiled but detached
+//				return this;
+//			}
+//			
+//			Selector sel = compiler(selector);
+//			sel.attach();
 			
 			return this;
 		}
