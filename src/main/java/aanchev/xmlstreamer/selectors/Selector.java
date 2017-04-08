@@ -490,15 +490,40 @@ public interface Selector {
 		
 		public AST selTraitNot() {
 			return new SelectorNode(":not()", 2) {
+				private Element withTrait = null;
+				
 				public void attach() {
+					AST selElement = getChild(0);
+					
+					if (selElement == null) {
+						selElement = selAny();
+						setChild(0, selElement);
+					}
+
+
+					//## order of attachments matter!
+
+					sellink(getChild(1), e -> {
+						withTrait = e;
+					});
+
+					sellink(selElement, e -> {
+						if (withTrait == null) //if not with trait
+							action.accept(e);
+
+						withTrait = null; //reset to be ready for the next
+					});
 				}
 
 				public void detach() {
+					withTrait = null;
+					getChild(0).<Selector>cast().detach();
+					getChild(1).<Selector>cast().detach();
 				}
 
 				@Override
 				public String getSelector() {
-					return getChild(0) + ":not(" + getChild(1) + ")";
+					return any(getChild(0)) + ":not(" + getChild(1) + ")";
 				}
 			};
 		}
