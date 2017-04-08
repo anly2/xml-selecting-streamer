@@ -97,8 +97,8 @@ public class AsyncXMLStreamerTest {
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
 		
 		System.out.println("Testing 4");
-		streamer.on("book:before", e -> System.out.println("-"+1+"-"));
-		streamer.on("book:after", e -> System.out.println("-"+2+"-"));
+		streamer.on("book+book:before", e -> System.out.println("-"+1+"-"));
+		streamer.on("book+book:after", e -> System.out.println("-"+2+"-"));
 		streamer.drain();
 	}
 
