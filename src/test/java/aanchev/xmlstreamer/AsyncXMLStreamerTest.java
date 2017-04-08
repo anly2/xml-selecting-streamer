@@ -49,20 +49,40 @@ public class AsyncXMLStreamerTest {
 	public void test2() {
 		String xml = String.join("\n",
 			"<root>",
-			"<book>","</book>",
-			"<book>","</book>",
-			"<book>A","</book>",
+			"<book>A</book>",
+			"<book>1</book>",
+			"<book>2</book>",
 			"",
 			"<section>",
-			"	<book><ref>B1</ref></book>",
+			"	<book><ref>B</ref></book>",
 			"</section>",
 			"</root>"
 		);
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
 		
 		System.out.println("Testing");
-		streamer.on("book~book", e -> System.out.println("-["+e.getText()+"]-"));
+		streamer.on("book~book", e -> System.out.println("-"+e.getText()+"-"));
 		streamer.drain();
 	}
 
+
+	@Test
+	public void test3() {
+		String xml = String.join("\n",
+			"<root>",
+			"<book>A</book>",
+			"<book>1</book>",
+			"<book>2</book>",
+			"",
+			"<section>",
+			"	<book>B</book><br/><book>C</book>",
+			"</section>",
+			"</root>"
+		);
+		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		
+		System.out.println("Testing");
+		streamer.on("book+book", e -> System.out.println("-"+e.getText()+"-"));
+		streamer.drain();
+	}
 }
