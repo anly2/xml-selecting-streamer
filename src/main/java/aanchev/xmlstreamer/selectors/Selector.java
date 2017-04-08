@@ -398,28 +398,27 @@ public interface Selector {
 		public AST selImmediateSibling() {
 			return new BinarySelectorNode("+") {
 				private boolean active = false;
+				private boolean wasActive = false; //keep until tag-end for possible checks then
 				private Consumer<Element> endTracker;
 				private Consumer<Element> startTracker;
 				private Set<Element> pending = new HashSet<>();
 				
 				public void attach() {
-					// attach SIBLING selector
-					sellink(getChild(0), e -> {
-						if (e.isClosed())
-							active = true;
-						else
-							pending.add(e);
-					});
-					
 					// attach ELEMENT selector
 					sellink(getChild(1), e -> {
-						if (active)
+						if ((!e.isClosed() && active) || (e.isClosed() && wasActive))
 							action.accept(e);
+					});
+					
+					// attach SIBLING selector
+					sellink(getChild(0), e -> {
+						pending.add(e);
 					});
 					
 					
 					// attach the trackers
 					startTracker = streamer.onTagStart(e -> {
+						wasActive = active;
 						active = false;
 					});
 					
