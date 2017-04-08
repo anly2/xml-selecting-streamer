@@ -39,7 +39,7 @@ public class AsyncXMLStreamerTest {
 		);
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
 		
-		System.out.println("Testing");
+		System.out.println("Testing 1");
 		streamer.on("book title", e -> System.out.println(e.getTag() + "|"+e.getText()+"|"));
 		streamer.on("book>author", e -> System.out.println(e.getText()));
 		streamer.drain();
@@ -60,7 +60,7 @@ public class AsyncXMLStreamerTest {
 		);
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
 		
-		System.out.println("Testing");
+		System.out.println("Testing 2");
 		streamer.on("book~book", e -> System.out.println("-"+e.getText()+"-"));
 		streamer.drain();
 	}
@@ -81,8 +81,40 @@ public class AsyncXMLStreamerTest {
 		);
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
 		
-		System.out.println("Testing");
+		System.out.println("Testing 3");
 		streamer.on("book+book", e -> System.out.println("-"+e.getText()+"-"));
+		streamer.drain();
+	}
+
+	@Test
+	public void test4() {
+		String xml = String.join("\n",
+			"<root>",
+			"<book>A</book>",
+			"<book>B</book>",
+			"</root>"
+		);
+		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		
+		System.out.println("Testing 4");
+		streamer.on("book:before", e -> System.out.println("-"+1+"-"));
+		streamer.on("book:after", e -> System.out.println("-"+2+"-"));
+		streamer.drain();
+	}
+
+	@Test
+	public void test5() {
+		String xml = String.join("\n",
+			"<root>",
+			"<book>A</book>",
+			"<book>B</book>",
+			"<p>1</p>",
+			"</root>"
+		);
+		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		
+		System.out.println("Testing 5");
+		streamer.on("book+:not(book)", e -> System.out.println("-"+e.getText()+"-"));
 		streamer.drain();
 	}
 }
