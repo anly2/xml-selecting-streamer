@@ -3,8 +3,10 @@ package aanchev.xmlstreamer.selectors;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -69,6 +71,7 @@ public interface Selector {
 			this.streamer = streamer;
 		}
 		
+
 		/* Selector types */
 		
 		private abstract class SelectorNode extends AST.Node implements Selector {
@@ -391,16 +394,47 @@ public interface Selector {
 		}
 
 		public AST selImmediateSibling() {
-			return new SelectorNode("+", 2) {
+			return new BinarySelectorNode("+") {
+				private boolean active = false;
+				private Consumer<Element> endTracker;
+				private Consumer<Element> startTracker;
+				private Set<Element> pending = new HashSet<>();
+				
 				public void attach() {
+					// attach SIBLING selector
+					sellink(getChild(0), e -> {
+						if (e.isClosed())
+							active = true;
+						else
+							pending.add(e);
+					});
+					
+					// attach ELEMENT selector
+					sellink(getChild(1), e -> {
+						if (active)
+							action.accept(e);
+					});
+					
+					
+					// attach the trackers
+					startTracker = streamer.onTagStart(e -> {
+						active = false;
+					});
+					
+					endTracker = streamer.onTagEnd(e -> {
+						active = pending.remove(e);
+					});
 				}
 
 				public void detach() {
-				}
+					streamer.offTagStart(startTracker);
+					streamer.offTagEnd(endTracker);
+					
+					startTracker = null;
+					endTracker = null;
 
-				@Override
-				public String getSelector() {
-					return getChild(0) + super.getSelector() + getChild(1);
+					getChild(0).<Selector>cast().detach();
+					getChild(1).<Selector>cast().detach();
 				}
 			};
 		}
