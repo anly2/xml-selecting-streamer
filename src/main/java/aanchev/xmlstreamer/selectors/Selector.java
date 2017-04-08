@@ -138,13 +138,15 @@ public interface Selector {
 			}
 
 			public void attach() {
-				Selector inner = getChild(0).cast();
+				Selector inner;
 				
 				if (getChild(0) == null) {
 					AST e = selAny();
 					setChild(0, e);
 					inner = e.cast();
 				}
+				else
+					inner = getChild(0).cast();
 				
 				inner.trigger(element -> {
 					if (matches(element))
@@ -441,31 +443,46 @@ public interface Selector {
 
 		
 		public AST selTraitBefore() {
-			return new SelectorNode(":before", 1) {
-				public void attach() {
-				}
-
-				public void detach() {
-				}
-
+			return new SimpleSelectorNode(":before") {
+				// selAny() triggers on tag-start already
+				
 				@Override
-				public String getSelector() {
-					return any(getChild(0)) + super.getSelector();
+				protected boolean matches(Element element) {
+					return !element.isClosed();
 				}
 			};
 		}
 
 		public AST selTraitAfter() {
-			return new SelectorNode(":after", 1) {
-				public void attach() {
-				}
-
-				public void detach() {
-				}
-
+			return new SimpleSelectorNode(":after") {
+				private Consumer<Element> endTracker;
+				private Set<Element> pending = new HashSet<>();
+				
 				@Override
-				public String getSelector() {
-					return any(getChild(0)) + super.getSelector();
+				protected boolean matches(Element element) {
+					if (element.isClosed())
+						return true;
+					
+					pending.add(element);
+					return false;
+				}
+				
+				@Override
+				public void attach() {
+					super.attach();
+					
+					endTracker = streamer.onTagEnd(e -> {
+						if (pending.remove(e))
+							action.accept(e);
+					});
+				}
+				
+				@Override
+				public void detach() {
+					super.detach();
+					
+					streamer.offTagEnd(endTracker);
+					endTracker = null;
 				}
 			};
 		}
