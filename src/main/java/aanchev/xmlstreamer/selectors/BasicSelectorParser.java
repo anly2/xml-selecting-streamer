@@ -77,7 +77,7 @@ public class BasicSelectorParser implements Selector.Compiler {
 
 	/* Selector types */
 	
-	private abstract class SelectorNode extends AST.Node implements Selector {
+	protected abstract class SelectorNode extends AST.Node implements Selector {
 		public String raw;
 		protected Consumer<Element> action;
 		
@@ -101,7 +101,7 @@ public class BasicSelectorParser implements Selector.Compiler {
 		}
 	}
 
-	private abstract class SelectorLeaf extends AST.Leaf implements Selector, Consumer<Element> {
+	protected abstract class SelectorLeaf extends AST.Leaf implements Selector, Consumer<Element> {
 		public String raw;
 		protected Consumer<Element> action;
 		
@@ -491,42 +491,42 @@ public class BasicSelectorParser implements Selector.Compiler {
 	
 	
 	public AST selTraitNot() {
-			return new SelectorNode(":not()", 2) {
-				private Element withTrait = null;
+		return new SelectorNode(":not()", 2) {
+			private Element withTrait = null;
+
+			public void attach() {
+				AST selElement = getChild(0);
 				
-				public void attach() {
-					AST selElement = getChild(0);
-					
-					if (selElement == null) {
-						selElement = selAny();
-						setChild(0, selElement);
-					}
-
-
-					//## order of attachments matter!
-
-					sellink(getChild(1), e -> {
-						withTrait = e;
-					});
-
-					sellink(selElement, e -> {
-						if (withTrait == null) //if not with trait
-							action.accept(e);
-
-						withTrait = null; //reset to be ready for the next
-					});
+				if (selElement == null) {
+					selElement = selAny();
+					setChild(0, selElement);
 				}
 
-				public void detach() {
-					withTrait = null;
-					getChild(0).<Selector>cast().detach();
-					getChild(1).<Selector>cast().detach();
-				}
 
-				@Override
-				public String getSelector() {
-					return any(getChild(0)) + ":not(" + getChild(1) + ")";
-				}
-			};
-		}
+				//## order of attachments matter!
+
+				sellink(getChild(1), e -> {
+					withTrait = e;
+				});
+
+				sellink(selElement, e -> {
+					if (withTrait == null) //if not with trait
+						action.accept(e);
+
+					withTrait = null; //reset to be ready for the next
+				});
+			}
+
+			public void detach() {
+				withTrait = null;
+				getChild(0).<Selector>cast().detach();
+				getChild(1).<Selector>cast().detach();
+			}
+
+			@Override
+			public String getSelector() {
+				return any(getChild(0)) + ":not(" + getChild(1) + ")";
+			}
+		};
+	}
 }
