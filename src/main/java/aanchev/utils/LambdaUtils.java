@@ -1,5 +1,6 @@
 package aanchev.utils;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class LambdaUtils {
@@ -9,6 +10,11 @@ public class LambdaUtils {
 			return null;
 		
 		return use.apply(value);
+	}
+
+	public static <V> void let(V value, Consumer<V> use) {
+		if (value != null)
+			use.accept(value);
 	}
 	
 	
