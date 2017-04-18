@@ -36,7 +36,7 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	private Set<Consumer<Element>> actionsOpen  = new LinkedHashSet<>();
 	private Set<Consumer<Element>> actionsClose = new LinkedHashSet<>();
 	private Map<Consumer<Element>, Set<Selector>> activators = new HashMap<>();
-	private Selector.Compiler compiler = new Selector.Compiler(this);
+	private Selector.Compiler compiler = Selector.compilerFor(this);
 	
 	private Deque<Pair<Element, Boolean>> events = new LinkedList<>();
 	private boolean processingEvent = false;
