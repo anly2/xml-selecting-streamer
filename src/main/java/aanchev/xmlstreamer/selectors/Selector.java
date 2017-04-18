@@ -16,6 +16,6 @@ public interface Selector {
 	}
 	
 	public static Compiler compilerFor(AsyncXMLStreamer streamer) {
-		return new BasicSelectorParser(streamer);
+		return new TargetingBasicSelectorParser(streamer);
 	}
 }
