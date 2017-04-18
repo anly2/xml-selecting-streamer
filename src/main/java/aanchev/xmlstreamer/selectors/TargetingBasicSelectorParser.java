@@ -79,14 +79,19 @@ public class TargetingBasicSelectorParser extends BasicSelectorParser {
 	@Override
 	protected void initParser(Builder builder) {
 		builder
-			.rule("\\s*+" + "\\$([^\\$\\s>~\\+]++)" + "\\s*+", m -> selTargeted(target))
-			.rule("\\s*+" + "([^\\$\\s>~\\+]++)\\$" + "\\s*+", m -> selTargeted(target));
+			.rule("\\s*+" + "\\$([^\\$\\s>~\\+]++)" + "\\s*+", m -> selTargeted(target)) //#! References the FIRST matching
+			.rule("\\s*+" + "([^\\$\\s>~\\+]++)\\$" + "\\s*+", m -> selTargeted(target)); //#! References the LAST matching
 		
 		super.initParser(builder);
 	}
 	
 	
 	public AST selTargeted(final Reference<Element> refTarget) {
+		//TODO implement "selection mode" -- whether to select the FIRST or LAST matching:
+		//	<div id=1><div id=2><div id=3><b>A</b></div></div></div
+		//	`$div b`   ->   selects div#1
+		//	`div$ b`   ->   selects div#3
+		
 		return new SelectorNode("$", 1) {
 			@Override
 			public void attach() {
