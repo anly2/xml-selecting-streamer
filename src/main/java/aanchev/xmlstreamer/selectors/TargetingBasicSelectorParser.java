@@ -1,5 +1,8 @@
 package aanchev.xmlstreamer.selectors;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import aanchev.parser.SimpleParser.AST;
@@ -9,13 +12,56 @@ import aanchev.xmlstreamer.Element;
 
 public class TargetingBasicSelectorParser extends BasicSelectorParser {
 
+	/* Construction */
+
 	public TargetingBasicSelectorParser(AsyncXMLStreamer streamer) {
 		super(streamer);
 	}
 	
 	
-	private Reference<Element> target = new Reference<>(null);
+	/* Extend and Hook into the Parser */
 	
+	@Override
+	public Selector compile(CharSequence selector) {
+		final Reference<Element> target = new Reference<>(null);
+		
+		return new SelectorProxy(this.compileWith(selector, target)) {
+			@Override
+			public Consumer<Element> trigger(Consumer<Element> action) {
+				return super.trigger(element -> {
+					Element e = target.value; //#? can this be null?
+					target.value = null;
+					
+					action.accept(e);					
+				});
+			}
+		};
+	}
+
+	@Override
+	protected void initParser(Builder builder) {
+		builder
+			.rule("\\s*+" + "\\$([^\\$\\s>~\\+]++)" + "\\s*+", m -> selTargetedFirst())
+			.rule("\\s*+" + "([^\\$\\s>~\\+]++)\\$" + "\\s*+", m -> selTargetedLast());
+		
+		super.initParser(builder);
+	}
+
+	
+	/* Maintain Targets as Context/State */
+	
+	private Map<Thread, Reference<Element>> targets = Collections.synchronizedMap(new HashMap<>());
+	
+	protected synchronized Selector compileWith(CharSequence selector, Reference<Element> target) {
+		targets.put(Thread.currentThread(), target);
+		Selector sel = super.compile(selector);
+		targets.remove(Thread.currentThread());
+		return sel;
+	}
+
+	
+	/* Inner Classes */
+
 	private static class Reference<E> {
 		public E value;
 		
@@ -58,39 +104,10 @@ public class TargetingBasicSelectorParser extends BasicSelectorParser {
 	}
 	
 	
-	@Override
-	public Selector compile(CharSequence selector) {
-		target.value = null;
-		return new SelectorProxy(super.compile(selector)) {
-			@Override
-			public Consumer<Element> trigger(Consumer<Element> action) {
-				return super.trigger(element -> {
-					Element e = element;
-					
-					if (target.value != null) //#? is it possible to be null?
-						e = target.value;
-					
-					action.accept(e);					
-				});
-			}
-		};
-	}
+	/* AST Selector Nodes Creation */
 	
-	@Override
-	protected void initParser(Builder builder) {
-		builder
-			.rule("\\s*+" + "\\$([^\\$\\s>~\\+]++)" + "\\s*+", m -> selTargeted(target)) //#! References the FIRST matching
-			.rule("\\s*+" + "([^\\$\\s>~\\+]++)\\$" + "\\s*+", m -> selTargeted(target)); //#! References the LAST matching
-		
-		super.initParser(builder);
-	}
-	
-	
-	public AST selTargeted(final Reference<Element> refTarget) {
-		//TODO implement "selection mode" -- whether to select the FIRST or LAST matching:
-		//	<div id=1><div id=2><div id=3><b>A</b></div></div></div
-		//	`$div b`   ->   selects div#1
-		//	`div$ b`   ->   selects div#3
+	public AST selTargetedLast() {
+		final Reference<Element> refTarget = targets.get(Thread.currentThread());
 		
 		return new SelectorNode("$", 1) {
 			@Override
@@ -113,8 +130,39 @@ public class TargetingBasicSelectorParser extends BasicSelectorParser {
 			
 			@Override
 			public String getSelector() {
+				return getChild(0) + "$";
+			}
+		};
+	}
+	
+	public AST selTargetedFirst() {
+		final Reference<Element> refTarget = targets.get(Thread.currentThread());
+		
+		return new SelectorNode("$", 1) {
+			@Override
+			public void attach() {
+				Selector inner = getChild(0).cast(); //potential NullPointerException
+				
+				inner.trigger(element -> {
+					if(refTarget.value == null)
+						refTarget.value = element;
+					action.accept(element);
+				});
+				inner.attach();
+			}
+
+			@Override
+			public void detach() {
+				Selector inner = getChild(0).cast(); //potential NullPointerException
+				inner.detach();
+				refTarget.value = null;
+			}
+			
+			@Override
+			public String getSelector() {
 				return "$" + getChild(0);
 			}
 		};
 	}
+	
 }
