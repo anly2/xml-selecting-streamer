@@ -1,11 +1,8 @@
 package aanchev.xmlstreamer.selectors;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -17,7 +14,7 @@ import aanchev.parser.SimpleParser.Castable;
 import aanchev.xmlstreamer.AsyncXMLStreamer;
 import aanchev.xmlstreamer.Element;
 
-public class BasicSelectorParser implements Selector.Compiler {
+public class BasicSelectorCompilerDecorator extends AbstractSelectorCompilerDecorator {
 	/*
 	public static void main(String[] args) {
 		String input = "#main .title ~ ul > li:not(a) + [href] ~ a#target.link[href^=\"https\"]";
@@ -25,31 +22,19 @@ public class BasicSelectorParser implements Selector.Compiler {
 		System.out.println(root);
 	}
 	//*/
-	
-	
-	/* Bound Properties */
-	
-	private SimpleParser parser;
-	protected AsyncXMLStreamer streamer;
-	
-	
+
+
 	/* Constructors */
-	
-	public BasicSelectorParser(AsyncXMLStreamer streamer) {
-		this.streamer = streamer;
-		initParser();
+
+	public BasicSelectorCompilerDecorator(AsyncXMLStreamer streamer) {
+		super(streamer);
 	}
-	
-	
-	/* Initialization */
-	
-	protected void initParser() {
-		SimpleParser.Builder builder = new SimpleParser.Builder();
-		initParser(builder);
-		this.parser = builder.build();
-	}
-	
-	protected void initParser(SimpleParser.Builder builder) {
+
+
+	/* ParserDecorator Contract */
+
+	@Override
+	public void decorate(SimpleParser.Builder builder) {
 		builder
 			.rule("\\s*+"+ "([^\\s~]++)"   +"\\s*+"+   "~"    +"\\s*+" +"(.*+)", m -> selSibling())
 			.rule("\\s*+"+ "([^\\s\\+]++)" +"\\s*+"+  "\\+"   +"\\s*+" +"(.*+)", m -> selImmediateSibling())
@@ -65,84 +50,20 @@ public class BasicSelectorParser implements Selector.Compiler {
 			.rule("\\*", m -> selAny());
 	}
 
-	
-	/* Selector.Compiler Contract */
-	
-	public Selector compile(CharSequence selector) {
-		return parser.parse(selector).cast();
-	}		
-	
-	
+
 	/*** Selector.Factory ***/
 
 	/* Selector types */
-	
-	protected abstract class SelectorNode extends AST.Node implements Selector {
-		public String raw;
-		protected Consumer<Element> action;
-		
-		public SelectorNode(String raw, int childrenCount) {
-			super(array(childrenCount));
-			this.raw = raw;
-		}
 
-		public String getSelector() {
-			return this.raw;
-		}
-
-		public String toString() {
-			return getSelector();
-		}
-
-		
-		public Consumer<Element> trigger(Consumer<Element> action) {
-			this.action = action;
-			return action;
-		}
-	}
-
-	protected abstract class SelectorLeaf extends AST.Leaf implements Selector, Consumer<Element> {
-		public String raw;
-		protected Consumer<Element> action;
-		
-		public SelectorLeaf(String raw) {
-			this.raw = raw;
-		}
-
-		public String getSelector() {
-			return this.raw;
-		}
-		
-		@Override
-		public String toString() {
-			return getSelector();
-		}
-
-
-		@Override
-		public Consumer<Element> trigger(Consumer<Element> action) {
-			this.action = action;
-			return action;
-		}
-		
-		
-		public void attach() {
-			streamer.onTagStart(this);
-		}
-
-		public void detach() {
-			streamer.offTagStart(this);
-		}
-	}
-
-	private abstract class SimpleSelectorNode extends SelectorNode {
+	protected abstract class SimpleSelectorNode extends SelectorNode {
 		public SimpleSelectorNode(String raw) {
 			super(raw, 1);
 		}
 
+		@Override
 		public void attach() {
 			Selector inner;
-			
+
 			if (getChild(0) == null) {
 				AST e = selAny();
 				setChild(0, e);
@@ -150,7 +71,7 @@ public class BasicSelectorParser implements Selector.Compiler {
 			}
 			else
 				inner = getChild(0).cast();
-			
+
 			inner.trigger(element -> {
 				if (matches(element))
 					action.accept(element);
@@ -158,52 +79,38 @@ public class BasicSelectorParser implements Selector.Compiler {
 			inner.attach();
 		}
 
+		@Override
 		public void detach() {
 			getChild(0).<Selector>cast().detach();
 		}
 
-		
+
 		protected abstract boolean matches(Element element);
-		
-		
+
+
 		@Override
 		public String getSelector() {
 			return any(getChild(0)) + super.getSelector();
 		}
 	}
-	
-	private abstract class BinarySelectorNode extends SelectorNode {
-		public BinarySelectorNode(String raw) {
-			super(raw, 2);
-		}
 
-		@Override
-		public String getSelector() {
-			return getChild(0) + super.getSelector() + getChild(1);
-		}
-	}
-	
-	
+
 	/* Helper methods */
-	
-	private static <E> List<E> array(int size) {
-		return new ArrayList<E>(Collections.nCopies(size, null));
-	}	
-	
+
 	private static String any(Object o) {
 		return o == null? "*" : o.toString();
 	}
-	
+
 	private static Selector sellink(Castable selector, Consumer<Element> action) {
 		Selector sel = selector.cast();
 		sel.attach();
 		sel.trigger(action);
 		return sel;
 	}
-	
-	
+
+
 	/* Selector instance creators */
-	
+
 	public AST selAny() {
 		return new SelectorLeaf("*") {
 			@Override
@@ -212,7 +119,7 @@ public class BasicSelectorParser implements Selector.Compiler {
 			}
 		};
 	}
-	
+
 	public AST selTag(String tag) {
 		return new SelectorLeaf(tag) {
 			@Override
@@ -223,9 +130,10 @@ public class BasicSelectorParser implements Selector.Compiler {
 		};
 	}
 
-	
+
 	public AST selAttribute(String attr) {
 		return new SimpleSelectorNode("["+attr+"]") {
+			@Override
 			protected boolean matches(Element element) {
 				return (element.getAttribute(attr) != null);
 			}
@@ -234,16 +142,18 @@ public class BasicSelectorParser implements Selector.Compiler {
 
 	public AST selAttrId(String id) {
 		return new SimpleSelectorNode("#"+id) {
+			@Override
 			protected boolean matches(Element element) {
 				final Object v = element.getAttribute("id");
 				return (v != null && id.equals(v));
 			}
 		};
 	}
-	
+
 	public AST selAttrClass(String cls) {
 		return new SimpleSelectorNode("."+cls) {
 			private Predicate<String> pred = Pattern.compile("(?:^|\\s)\\Q"+cls+"\\E(?:$|\\S)").asPredicate();
+			@Override
 			protected boolean matches(Element element) {
 				final Object v = element.getAttribute("class");
 				return (v != null && pred.test(v.toString()));
@@ -251,16 +161,17 @@ public class BasicSelectorParser implements Selector.Compiler {
 		};
 	}
 
-	
+
 	public AST selDescendent() {
 		return new BinarySelectorNode("	") {
 			private int depth = -1;
 			private Consumer<Element> startTracker;
 			private Consumer<Element> endTracker;
-			
+
+			@Override
 			public void attach() {
 				//## order of attachments matters! -- trackers first
-				
+
 				startTracker = streamer.onTagStart(e -> {
 					if (depth >= 0)
 						depth++;
@@ -285,10 +196,11 @@ public class BasicSelectorParser implements Selector.Compiler {
 				});
 			}
 
+			@Override
 			public void detach() {
 				streamer.offTagStart(startTracker);
 				streamer.offTagEnd(endTracker);
-				
+
 				startTracker = null;
 				endTracker = null;
 
@@ -303,10 +215,11 @@ public class BasicSelectorParser implements Selector.Compiler {
 			private int depth = -1;
 			private Consumer<Element> startTracker;
 			private Consumer<Element> endTracker;
-			
+
+			@Override
 			public void attach() {
 				//## order of attachments matters! -- trackers first
-				
+
 				startTracker = streamer.onTagStart(e -> {
 					if (depth >= 0)
 						depth++;
@@ -322,7 +235,7 @@ public class BasicSelectorParser implements Selector.Compiler {
 				sellink(getChild(0), e -> {
 					depth = 0;
 				});
-				
+
 				// attach ELEMENT selector
 				sellink(getChild(1), e -> {
 					if (depth == 1)
@@ -330,10 +243,11 @@ public class BasicSelectorParser implements Selector.Compiler {
 				});
 			}
 
+			@Override
 			public void detach() {
 				streamer.offTagStart(startTracker);
 				streamer.offTagEnd(endTracker);
-				
+
 				startTracker = null;
 				endTracker = null;
 
@@ -342,15 +256,16 @@ public class BasicSelectorParser implements Selector.Compiler {
 			}
 		};
 	}
-	
-	
+
+
 	public AST selSibling() {
 		return new BinarySelectorNode("~") {
 			private int depth = -1;
 			private Consumer<Element> startTracker;
 			private Consumer<Element> endTracker;
 			private Deque<Integer> occurances = new LinkedList<>();
-			
+
+			@Override
 			public void attach() {
 				//## order of attachments matters!
 
@@ -359,7 +274,7 @@ public class BasicSelectorParser implements Selector.Compiler {
 					if (depth >= 0 && occurances.peek() == depth)
 						action.accept(e);
 				});
-				
+
 				// attach SIBLING selector second!
 				sellink(getChild(0), e -> {
 					if (depth < 0)
@@ -368,8 +283,8 @@ public class BasicSelectorParser implements Selector.Compiler {
 					if (occurances.isEmpty() || occurances.peek() < depth)
 						occurances.push(depth);
 				});
-				
-				
+
+
 				// attach trackers
 				startTracker = streamer.onTagStart(e -> {
 					if (depth >= 0)
@@ -379,16 +294,17 @@ public class BasicSelectorParser implements Selector.Compiler {
 				endTracker = streamer.onTagEnd(e -> {
 					if (depth >= 0)
 						depth--;
-					
+
 					if (!occurances.isEmpty() && occurances.peek() > depth)
 						occurances.pop();
 				});
 			}
 
+			@Override
 			public void detach() {
 				streamer.offTagStart(startTracker);
 				streamer.offTagEnd(endTracker);
-				
+
 				startTracker = null;
 				endTracker = null;
 
@@ -405,35 +321,37 @@ public class BasicSelectorParser implements Selector.Compiler {
 			private Consumer<Element> endTracker;
 			private Consumer<Element> startTracker;
 			private Set<Element> pending = new HashSet<>();
-			
+
+			@Override
 			public void attach() {
 				// attach ELEMENT selector
 				sellink(getChild(1), e -> {
 					if ((!e.isClosed() && active) || (e.isClosed() && wasActive))
 						action.accept(e);
 				});
-				
+
 				// attach SIBLING selector
 				sellink(getChild(0), e -> {
 					pending.add(e);
 				});
-				
-				
+
+
 				// attach the trackers
 				startTracker = streamer.onTagStart(e -> {
 					wasActive = active;
 					active = false;
 				});
-				
+
 				endTracker = streamer.onTagEnd(e -> {
 					active = pending.remove(e);
 				});
 			}
 
+			@Override
 			public void detach() {
 				streamer.offTagStart(startTracker);
 				streamer.offTagEnd(endTracker);
-				
+
 				startTracker = null;
 				endTracker = null;
 
@@ -443,11 +361,11 @@ public class BasicSelectorParser implements Selector.Compiler {
 		};
 	}
 
-	
+
 	public AST selTraitBefore() {
 		return new SimpleSelectorNode(":before") {
 			// selAny() triggers on tag-start already
-			
+
 			@Override
 			protected boolean matches(Element element) {
 				return !element.isClosed();
@@ -459,44 +377,45 @@ public class BasicSelectorParser implements Selector.Compiler {
 		return new SimpleSelectorNode(":after") {
 			private Consumer<Element> endTracker;
 			private Set<Element> pending = new HashSet<>();
-			
+
 			@Override
 			protected boolean matches(Element element) {
 				if (element.isClosed())
 					return true;
-				
+
 				pending.add(element);
 				return false;
 			}
-			
+
 			@Override
 			public void attach() {
 				super.attach();
-				
+
 				endTracker = streamer.onTagEnd(e -> {
 					if (pending.remove(e))
 						action.accept(e);
 				});
 			}
-			
+
 			@Override
 			public void detach() {
 				super.detach();
-				
+
 				streamer.offTagEnd(endTracker);
 				endTracker = null;
 			}
 		};
 	}
-	
-	
+
+
 	public AST selTraitNot() {
 		return new SelectorNode(":not()", 2) {
 			private Element withTrait = null;
 
+			@Override
 			public void attach() {
 				AST selElement = getChild(0);
-				
+
 				if (selElement == null) {
 					selElement = selAny();
 					setChild(0, selElement);
@@ -517,6 +436,7 @@ public class BasicSelectorParser implements Selector.Compiler {
 				});
 			}
 
+			@Override
 			public void detach() {
 				withTrait = null;
 				getChild(0).<Selector>cast().detach();

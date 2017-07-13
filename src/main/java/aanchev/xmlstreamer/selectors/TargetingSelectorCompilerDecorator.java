@@ -5,21 +5,48 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import aanchev.parser.SimpleParser;
 import aanchev.parser.SimpleParser.AST;
-import aanchev.parser.SimpleParser.Builder;
 import aanchev.xmlstreamer.AsyncXMLStreamer;
 import aanchev.xmlstreamer.Element;
+import aanchev.xmlstreamer.selectors.Selector.Compiler;
 
-public class TargetingBasicSelectorParser extends BasicSelectorParser {
+public class TargetingSelectorCompilerDecorator extends AbstractSelectorCompilerDecorator implements Selector.Compiler {
+
+	/* Inner State */
+
+	private Selector.Compiler kernelParser;
+	private Map<Thread, Reference<Element>> targets = Collections.synchronizedMap(new HashMap<>()); // maintain Targets as Context/State
 
 	/* Construction */
 
-	public TargetingBasicSelectorParser(AsyncXMLStreamer streamer) {
+	public TargetingSelectorCompilerDecorator() {
+		this(null);
+	}
+
+	public TargetingSelectorCompilerDecorator(AsyncXMLStreamer streamer) {
 		super(streamer);
 	}
 
 
 	/* Extend and Hook into the Parser */
+
+	@Override
+	public void decorate(SimpleParser.Builder builder) {
+		builder.firstly() //add rules to the "top" (tried first)
+			.rule("\\s*+" + "\\$([^\\$\\s>~\\+]++)" + "\\s*+", m -> selTargetedFirst())
+			.rule("\\s*+" + "([^\\$\\s>~\\+]++)\\$" + "\\s*+", m -> selTargetedLast())
+			.lastly(); //"reset" the insertion index just in case
+	}
+
+	@Override
+	public Compiler encapsulate(Compiler result) {
+		this.kernelParser = result;
+		return this;
+	}
+
+
+	/* Selector.Compiler Contract */
 
 	@Override
 	public Selector compile(CharSequence selector) {
@@ -44,23 +71,9 @@ public class TargetingBasicSelectorParser extends BasicSelectorParser {
 		};
 	}
 
-	@Override
-	protected void initParser(Builder builder) {
-		builder
-			.rule("\\s*+" + "\\$([^\\$\\s>~\\+]++)" + "\\s*+", m -> selTargetedFirst())
-			.rule("\\s*+" + "([^\\$\\s>~\\+]++)\\$" + "\\s*+", m -> selTargetedLast());
-
-		super.initParser(builder);
-	}
-
-
-	/* Maintain Targets as Context/State */
-
-	private Map<Thread, Reference<Element>> targets = Collections.synchronizedMap(new HashMap<>());
-
 	protected synchronized Selector compileWith(CharSequence selector, Reference<Element> target) {
 		targets.put(Thread.currentThread(), target);
-		Selector sel = super.compile(selector);
+		Selector sel = kernelParser.compile(selector);
 		targets.remove(Thread.currentThread());
 		return sel;
 	}
