@@ -9,31 +9,35 @@ import java.util.List;
 import org.junit.Test;
 
 public class AsyncXMLStreamerTest {
-	
+
 	public static class Expectations<E> {
 		private List<E> expected;
 		private int i = 0;
 
-		
+
 		@SuppressWarnings("unchecked")
 		public Expectations(E... expected) {
 			this(Arrays.asList(expected));
 		}
-		
+
 		public Expectations(List<E> expected) {
 			this.expected = expected;
 		}
-		
-		
+
+
 		public void a(E value) {
 			E e = expected.get(i);
 
 			assertEquals(e, value);
 			i++;
 		}
+
+		public void allMet() {
+			assertEquals("Not all expectations were met!", expected.size(), i);
+		}
 	}
-	
-	
+
+
 
 	@Test
 	public void test1() {
@@ -65,7 +69,7 @@ public class AsyncXMLStreamerTest {
 			"</root>"
 		);
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
-		
+
 		final Expectations<String> expect = new Expectations<>("title|B1", "A1", "title|B2", "A2", "title|B2");
 		streamer.on("book title", e -> expect.a(e.getTag() + "|"+e.getText()));
 		streamer.on("book>author", e -> expect.a(e.getText()));
@@ -86,7 +90,7 @@ public class AsyncXMLStreamerTest {
 			"</root>"
 		);
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
-		
+
 		final Expectations<String> expect = new Expectations<>("1", "2");
 		streamer.on("book~book", e -> expect.a(e.getText()));
 		streamer.drain();
@@ -107,7 +111,7 @@ public class AsyncXMLStreamerTest {
 			"</root>"
 		);
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
-		
+
 		final Expectations<String> expect = new Expectations<>("1", "2");
 		streamer.on("book+book", e -> expect.a(e.getText()));
 		streamer.drain();
@@ -122,7 +126,7 @@ public class AsyncXMLStreamerTest {
 			"</root>"
 		);
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
-		
+
 		final Expectations<Integer> expect = new Expectations<>(1, 2);
 		streamer.on("book+book:before", e -> expect.a(1));
 		streamer.on("book+book:after", e -> expect.a(2));

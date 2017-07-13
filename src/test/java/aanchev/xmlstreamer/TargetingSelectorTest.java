@@ -7,7 +7,7 @@ import org.junit.Test;
 import aanchev.xmlstreamer.AsyncXMLStreamerTest.Expectations;
 
 public class TargetingSelectorTest {
-	
+
 	/*
 	@Test
 	public void testTargetingCompile() {
@@ -22,7 +22,7 @@ public class TargetingSelectorTest {
 					.compile("book$ b"));
 	}
 	//*/
-	
+
 	@Test
 	public void testTargetingSelector() {
 		String xml = String.join("\n",
@@ -38,11 +38,11 @@ public class TargetingSelectorTest {
 			"</root>"
 		);
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
-		
+
 		final Expectations<String> expect = new Expectations<>("B1", "B2");
 		streamer.on("$book>title+author", e -> expect.a(e.getAttribute("id").toString()));
 		streamer.drain();
-		
+
 		//expect.allMet();
 	}
 
@@ -60,12 +60,12 @@ public class TargetingSelectorTest {
 			"</root>"
 		);
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
-		
+
 		final Expectations<String> expect = new Expectations<>("1", "3");
 		streamer.on("$div b", e -> expect.a(e.getAttribute("id").toString()));
 		streamer.on("div$ b", e -> expect.a(e.getAttribute("id").toString()));
 		streamer.drain();
-		
+
 		//expect.allMet();
 	}
 }
