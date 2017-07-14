@@ -188,7 +188,10 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 				sb.append(child.getText());
 				sb.append(" ");
 			}
-			sb.deleteCharAt(sb.length()-1);
+
+			if (!children.isEmpty())
+				sb.deleteCharAt(sb.length()-1);
+
 			return sb.toString();
 		}
 		
