@@ -67,6 +67,7 @@ public interface Selector {
 	public static Compiler compilerFor(AsyncXMLStreamer streamer) {
 		return new Compiler.Builder()
 					.chain(new BasicSelectorCompilerDecorator(streamer))
+					.chain(new ContentMatchingSelectorCompilerDecorator(streamer))
 					.chain(new TargetingSelectorCompilerDecorator(streamer))
 					.build();
 
