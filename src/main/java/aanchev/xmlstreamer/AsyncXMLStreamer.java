@@ -18,11 +18,11 @@ import aanchev.parser.Pair;
 import aanchev.xmlstreamer.selectors.Selector;
 
 public class AsyncXMLStreamer extends BasicXMLStreamer {
-	
+
 	public static void main(String[] args) {
 		/*
 		AsyncXMLStreamer streamer = new AsyncXMLStreamer((XMLEventReader)null);
-		
+
 		streamer.fire("*", new Node("1"));
 		Consumer<Element> a = streamer.on("*", e -> System.out.println("ELEMENT: "+e.getTag()));
 		streamer.fire("*", new Node("2"));
@@ -37,13 +37,13 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	private Set<Consumer<Element>> actionsClose = new LinkedHashSet<>();
 	private Map<Consumer<Element>, Set<Selector>> activators = new HashMap<>();
 	private Selector.Compiler compiler = Selector.compilerFor(this);
-	
+
 	private Deque<Pair<Element, Boolean>> events = new LinkedList<>();
 	private boolean processingEvent = false;
 
-	
+
 	/* Constructors */
-	
+
 	public AsyncXMLStreamer(File file) {
 		super(file);
 	}
@@ -59,49 +59,49 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	public AsyncXMLStreamer(XMLEventReader iterator) {
 		super(iterator);
 	}
-	
-	
+
+
 	/* Accessors */
-	
+
 	protected Selector compile(String selector) {
 		return this.compiler.compile(selector);
 	}
-	
-	
+
+
 	/* Rudimentary Functionality */
-	
+
 	public Consumer<Element> onTagStart(Consumer<Element> action) {
 		actionsOpen.add(action);
 		return action;
 	}
-	
+
 	public boolean offTagStart(Consumer<Element> action) {
 		return actionsOpen.remove(action);
 	}
-	
-	
+
+
 	public Consumer<Element> onTagEnd(Consumer<Element> action) {
 		actionsClose.add(action);
 		return action;
 	}
-	
+
 	public boolean offTagEnd(Consumer<Element> action) {
 		return actionsClose.remove(action);
 	}
-	
-	
+
+
 	/* Functionality */
 
 	public Consumer<Element> on(String selector, Consumer<Element> action) {
 		Selector sel = compile(selector);
-		
+
 		sel.trigger(action);
 		sel.attach();
-		
+
 		activators
 			.computeIfAbsent(action, k -> new LinkedHashSet<>())
 			.add(sel);
-		
+
 		return action;
 	}
 
@@ -111,48 +111,49 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 			return null;
 		});
 	}
-	
+
 	public void off(String selector, Consumer<Element> action) {
 		if (!activators.containsKey(action))
 			return;
-		
+
 		if (!remove(selector, action))
 			remove(compile(selector).getSelector(), action);
 	}
 
 	private boolean remove(String selector, Consumer<Element> action) {
 		boolean found = false;
-		
+
 		Iterator<Selector> selsIt = activators.get(action).iterator();
 		while (selsIt.hasNext()) {
 			Selector s = selsIt.next();
-			
+
 			if (!s.getSelector().equals(selector))
 				continue;
-			
+
 			s.detach();
 			selsIt.remove();
 			found = true;
 		}
-		
+
 		return found;
 	}
-	
-	
+
+
 	/* Hooks */
-	
+
+	@Override
 	public Element nextTag() {
 		Element element = super.nextTag();
-		
+
 		if (element == null)
 			return null;
-		
+
 		fire(element, element.isClosed());
-		
+
 		return element;
 	}
-	
-	private synchronized void fire(Element element, boolean closes) {
+
+	protected synchronized void fire(Element element, boolean closes) {
 		if (processingEvent) {
 			events.push(new Pair<>(element, closes));
 			return;
@@ -168,14 +169,14 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 		fire(event.left, event.right);
 	}
 
-	
+
 	/* Terminal operations */
-	
+
 	/**
 	 * BLOCKING!
 	 */
 	public void drain() {
-		while (super.hasNext())
-			super.next();
+		while (hasNext())
+			next();
 	}
 }
