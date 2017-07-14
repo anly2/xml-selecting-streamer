@@ -181,7 +181,7 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 		 */
 		public String getText() {
 			if (!isClosed())
-				doComplete.run(); //BLOCKING DRAIN!!!
+				doComplete.run(); //auto closes the element; BLOCKING!!!
 
 			StringBuilder sb = new StringBuilder();
 			for (Element child : children) {
@@ -192,25 +192,33 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 			return sb.toString();
 		}
 		
-		public Object getAttribute(String attr) {
-			return this.attributes.get(attr);
-		}
 		
+		/**
+		 * POTENTIALLY BLOCKING!!!
+		 */
 		public Collection<Element> getChildren() {
+			if (!isClosed())
+				doComplete.run(); //auto closes the element; BLOCKING!!!
+
 			return this.children;
 		}
-		
-		public boolean isClosed() {
-			return this.doComplete == null;
-		}
-		
-		
+
 		void appendChild(Element child) {
 			this.children.add(child);
 		}
+
 		
+		public Object getAttribute(String attr) {
+			return this.attributes.get(attr);
+		}
+
 		void setAttribute(String attr, Object value) {
 			this.attributes.put(attr, value);
+		}
+
+
+		public boolean isClosed() {
+			return this.doComplete == null;
 		}
 		
 		void close() {
