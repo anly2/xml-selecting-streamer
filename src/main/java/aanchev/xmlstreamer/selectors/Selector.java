@@ -70,14 +70,5 @@ public interface Selector {
 					.chain(new ContentMatchingSelectorCompilerDecorator(streamer))
 					.chain(new TargetingSelectorCompilerDecorator(streamer))
 					.build();
-
-
-//		return new ContentMatchingSelectorParser(
-//				new BasicSelectorParser(streamer,
-//				 new TargetingSelectorParser(streamer));
-
-//		return new BasicSelectorParser(streamer, new TargetingSelectorParser(streamer));
-
-//		return new TargetingBasicSelectorParser(streamer);
 	}
 }
