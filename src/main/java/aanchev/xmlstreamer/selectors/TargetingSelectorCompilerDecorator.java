@@ -136,6 +136,7 @@ public class TargetingSelectorCompilerDecorator extends AbstractSelectorCompiler
 
 				inner.trigger(element -> {
 					refTarget.value = element;
+					streamer.keepChildren(true);
 					action.accept(element);
 				});
 				inner.attach();

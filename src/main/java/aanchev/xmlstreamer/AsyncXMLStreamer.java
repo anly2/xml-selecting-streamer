@@ -19,18 +19,6 @@ import aanchev.xmlstreamer.selectors.Selector;
 
 public class AsyncXMLStreamer extends BasicXMLStreamer {
 
-	public static void main(String[] args) {
-		/*
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer((XMLEventReader)null);
-
-		streamer.fire("*", new Node("1"));
-		Consumer<Element> a = streamer.on("*", e -> System.out.println("ELEMENT: "+e.getTag()));
-		streamer.fire("*", new Node("2"));
-		streamer.off(a);
-		streamer.fire("*", new Node("3"));
-		*/
-	}
-
 	/* Properties */
 
 	private Set<Consumer<Element>> actionsOpen  = new LinkedHashSet<>();
@@ -95,7 +83,12 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	public Consumer<Element> on(String selector, Consumer<Element> action) {
 		Selector sel = compile(selector);
 
-		sel.trigger(action);
+		sel.trigger(e -> {
+			if (!e.isClosed())
+				keepChildren();
+
+			action.accept(e);
+		});
 		sel.attach();
 
 		activators
