@@ -383,6 +383,8 @@ public class BasicSelectorCompilerDecorator extends AbstractSelectorCompilerDeco
 				if (element.isClosed())
 					return true;
 
+				streamer.keepChildren(true); //keep the subsequent children
+
 				pending.add(element);
 				return false;
 			}
