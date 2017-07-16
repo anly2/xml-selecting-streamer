@@ -7,7 +7,7 @@ import junit.framework.TestCase;
 
 public class AppTest extends TestCase {
 
-	public void testOnData() {
+	public void experimentOnData() {
 		File file = new File("D:/Work/Java/nlp-data/elderscrolls_pages_current.xml");
 		AsyncXMLStreamer xmlstreamer = new AsyncXMLStreamer(file);
 
@@ -29,5 +29,12 @@ public class AppTest extends TestCase {
 		System.out.println("Reading: "+file);
 		xmlstreamer.drain();
 		System.out.println(i[0] + " pages matched");
+	}
+
+	public void experimentOnBlockingSource() {
+		XMLScanner scanner = new XMLScanner(System.in);
+
+		scanner.next("book+book");
+		System.out.println(scanner.next("title").getText());
 	}
 }
