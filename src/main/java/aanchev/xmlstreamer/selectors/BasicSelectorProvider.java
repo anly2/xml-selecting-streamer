@@ -14,7 +14,7 @@ import aanchev.parser.SimpleParser.Castable;
 import aanchev.xmlstreamer.AsyncXMLStreamer;
 import aanchev.xmlstreamer.Element;
 
-public class BasicSelectorCompilerDecorator extends AbstractSelectorCompilerDecorator {
+public class BasicSelectorProvider extends AbstractSelectorProvider {
 	/*
 	public static void main(String[] args) {
 		String input = "#main .title ~ ul > li:not(a) + [href] ~ a#target.link[href^=\"https\"]";
@@ -26,7 +26,7 @@ public class BasicSelectorCompilerDecorator extends AbstractSelectorCompilerDeco
 
 	/* Constructors */
 
-	public BasicSelectorCompilerDecorator(AsyncXMLStreamer streamer) {
+	public BasicSelectorProvider(AsyncXMLStreamer streamer) {
 		super(streamer);
 	}
 

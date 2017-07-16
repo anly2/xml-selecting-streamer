@@ -11,7 +11,7 @@ import aanchev.xmlstreamer.AsyncXMLStreamer;
 import aanchev.xmlstreamer.Element;
 import aanchev.xmlstreamer.selectors.Selector.Compiler;
 
-public class TargetingSelectorCompilerDecorator extends AbstractSelectorCompilerDecorator implements Selector.Compiler {
+public class TargetingSelectorProvider extends AbstractSelectorProvider implements Selector.Compiler {
 
 	/* Inner State */
 
@@ -20,11 +20,11 @@ public class TargetingSelectorCompilerDecorator extends AbstractSelectorCompiler
 
 	/* Construction */
 
-	public TargetingSelectorCompilerDecorator() {
+	public TargetingSelectorProvider() {
 		this(null);
 	}
 
-	public TargetingSelectorCompilerDecorator(AsyncXMLStreamer streamer) {
+	public TargetingSelectorProvider(AsyncXMLStreamer streamer) {
 		super(streamer);
 	}
 

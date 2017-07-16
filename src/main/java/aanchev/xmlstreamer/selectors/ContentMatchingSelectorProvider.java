@@ -8,11 +8,11 @@ import aanchev.parser.SimpleParser.Builder;
 import aanchev.xmlstreamer.AsyncXMLStreamer;
 import aanchev.xmlstreamer.Element;
 
-public class ContentMatchingSelectorCompilerDecorator extends BasicSelectorCompilerDecorator {
+public class ContentMatchingSelectorProvider extends BasicSelectorProvider {
 
 	/* Construction */
 
-	public ContentMatchingSelectorCompilerDecorator(AsyncXMLStreamer streamer) {
+	public ContentMatchingSelectorProvider(AsyncXMLStreamer streamer) {
 		super(streamer);
 	}
 

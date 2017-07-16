@@ -10,7 +10,7 @@ import aanchev.parser.SimpleParser.AST;
 import aanchev.xmlstreamer.AsyncXMLStreamer;
 import aanchev.xmlstreamer.Element;
 
-public abstract class AbstractSelectorCompilerDecorator implements Selector.Compiler.Decorator {
+public abstract class AbstractSelectorProvider implements Selector.Compiler.Decorator {
 
 	/* Bound Properties */
 
@@ -19,7 +19,7 @@ public abstract class AbstractSelectorCompilerDecorator implements Selector.Comp
 
 	/* Constructors */
 
-	public AbstractSelectorCompilerDecorator(AsyncXMLStreamer streamer) {
+	public AbstractSelectorProvider(AsyncXMLStreamer streamer) {
 		this.streamer = streamer;
 	}
 
