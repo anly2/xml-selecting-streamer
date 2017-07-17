@@ -14,7 +14,7 @@ import java.util.function.Consumer;
 
 import javax.xml.stream.XMLEventReader;
 
-import aanchev.parser.Pair;
+import aanchev.utils.Pair;
 import aanchev.xmlstreamer.selectors.Selector;
 
 public class AsyncXMLStreamer extends BasicXMLStreamer {

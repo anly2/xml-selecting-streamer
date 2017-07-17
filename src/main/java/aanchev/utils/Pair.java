@@ -1,4 +1,4 @@
-package aanchev.parser;
+package aanchev.utils;
 
 public class Pair<L, R> {
     public final L left;

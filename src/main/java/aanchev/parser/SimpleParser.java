@@ -193,8 +193,8 @@ public class SimpleParser {
 
 			@Override
 			public int getChildCount() {
-			return this.children.size();
-		}
+				return this.children.size();
+			}
 		}
 
 		public static class Leaf implements AST {

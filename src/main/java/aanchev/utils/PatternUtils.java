@@ -1,4 +1,4 @@
-package aanchev.parser;
+package aanchev.utils;
 
 import static java.util.Arrays.asList;
 
