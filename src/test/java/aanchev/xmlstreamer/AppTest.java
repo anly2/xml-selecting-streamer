@@ -1,13 +1,24 @@
 package aanchev.xmlstreamer;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.Scanner;
+
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
 
 import junit.framework.TestCase;
 
 public class AppTest extends TestCase {
 
-	public void experimentOnData() {
+	// ~ 4.3 sec (no sub-find)
+	// ~ 5.1 sec (both sub-finds, no prints)
+	// ~ 6.1 sec (both sub-finds, only title print)
+	// ~ 12  sec (both sub-finds, both prints)
+	public void testOnData() {
 		File file = new File("D:/Work/Java/nlp-data/elderscrolls_pages_current.xml");
 		AsyncXMLStreamer xmlstreamer = new AsyncXMLStreamer(file);
 
@@ -36,5 +47,33 @@ public class AppTest extends TestCase {
 
 		scanner.next("book+book");
 		System.out.println(scanner.next("title").getText());
+	}
+
+
+	// ~ 3.1 sec (raw xmlIterator)
+	public void checkSpeedOnRawRead() {
+		File file = new File("D:/Work/Java/nlp-data/elderscrolls_pages_current.xml");
+
+		XMLEventReader xmlIterator;
+		try {
+			 xmlIterator = XMLInputFactory.newInstance().createXMLEventReader(new FileReader(file));
+		}
+		catch (XMLStreamException | FactoryConfigurationError | FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+
+		try {
+			while (xmlIterator.hasNext())
+				xmlIterator.nextEvent();
+		} catch (XMLStreamException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// ~ 3.6 sec (XML wrappers)
+	public void checkSpeedOnDryRead() {
+		File file = new File("D:/Work/Java/nlp-data/elderscrolls_pages_current.xml");
+		AsyncXMLStreamer xmlstreamer = new AsyncXMLStreamer(file);
+		xmlstreamer.drain();
 	}
 }
