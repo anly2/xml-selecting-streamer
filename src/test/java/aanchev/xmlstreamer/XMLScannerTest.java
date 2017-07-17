@@ -120,7 +120,7 @@ public class XMLScannerTest {
 
 		final Expectations<String> expect = new Expectations<>(
 				"B1", "B2", "B3",  //selector: "book"
-				"B4", "B6",		   //selector: "book[audiobook]"
+				"B4", "B6",        //selector: "book[audiobook]"
 				"B7", "B8", "B9"); //selector: "book"
 
 		for (int i=0; i<3; i++)
