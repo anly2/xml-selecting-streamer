@@ -60,7 +60,7 @@ public abstract class AbstractSelectorProvider implements Selector.Compiler.Buil
 
 
 		@Override
-		public Consumer<Element> trigger(Consumer<Element> action) {
+		public Consumer<Element> triggers(Consumer<Element> action) {
 			this.action = action;
 			return action;
 		}
@@ -86,7 +86,7 @@ public abstract class AbstractSelectorProvider implements Selector.Compiler.Buil
 
 
 		@Override
-		public Consumer<Element> trigger(Consumer<Element> action) {
+		public Consumer<Element> triggers(Consumer<Element> action) {
 			this.action = action;
 			return action;
 		}

@@ -12,7 +12,7 @@ public interface Selector {
 	public void attach();
 	public void detach();
 	public String getSelector();
-	public Consumer<Element> trigger(Consumer<Element> action);
+	public Consumer<Element> triggers(Consumer<Element> action);
 
 	public interface Compiler {
 		public Selector compile(CharSequence selector);

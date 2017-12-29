@@ -73,7 +73,7 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 			else
 				inner = getChild(0).cast();
 
-			inner.trigger(element -> {
+			inner.triggers(element -> {
 				if (matches(element))
 					action.accept(element);
 			});
@@ -105,7 +105,7 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 	private static Selector sellink(Castable selector, Consumer<Element> action) {
 		Selector sel = selector.cast();
 		sel.attach();
-		sel.trigger(action);
+		sel.triggers(action);
 		return sel;
 	}
 

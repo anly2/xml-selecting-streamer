@@ -87,7 +87,7 @@ public class AsyncXMLStreamer extends BasicXMLStreamer implements TagEventNotifi
 	public Consumer<Element> on(String selector, Consumer<Element> action) {
 		Selector sel = compile(selector);
 
-		sel.trigger(e -> {
+		sel.triggers(e -> {
 			if (!e.isClosed())
 				keepChildren(true);
 

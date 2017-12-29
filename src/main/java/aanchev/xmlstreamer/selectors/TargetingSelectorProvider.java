@@ -55,8 +55,8 @@ public class TargetingSelectorProvider extends AbstractSelectorProvider implemen
 
 		return new SelectorProxy(this.compileWith(selector, target)) {
 			@Override
-			public Consumer<Element> trigger(Consumer<Element> action) {
-				return super.trigger(element -> {
+			public Consumer<Element> triggers(Consumer<Element> action) {
+				return super.triggers(element -> {
 					Element e;
 
 					if (target.value != null) {
@@ -114,8 +114,8 @@ public class TargetingSelectorProvider extends AbstractSelectorProvider implemen
 		}
 
 		@Override
-		public Consumer<Element> trigger(Consumer<Element> action) {
-			return base.trigger(action);
+		public Consumer<Element> triggers(Consumer<Element> action) {
+			return base.triggers(action);
 		}
 
 		@Override
@@ -135,7 +135,7 @@ public class TargetingSelectorProvider extends AbstractSelectorProvider implemen
 			public void attach() {
 				Selector inner = getChild(0).cast(); //potential NullPointerException
 
-				inner.trigger(element -> {
+				inner.triggers(element -> {
 					refTarget.value = element;
 
 					if (notifier instanceof ChildCullingXMLStreamer)
@@ -168,7 +168,7 @@ public class TargetingSelectorProvider extends AbstractSelectorProvider implemen
 			public void attach() {
 				Selector inner = getChild(0).cast(); //potential NullPointerException
 
-				inner.trigger(element -> {
+				inner.triggers(element -> {
 					if(refTarget.value == null)
 						refTarget.value = element;
 					action.accept(element);
