@@ -5,15 +5,15 @@ import java.util.regex.Pattern;
 
 import aanchev.parser.SimpleParser.AST;
 import aanchev.parser.SimpleParser.Builder;
-import aanchev.xmlstreamer.AsyncXMLStreamer;
 import aanchev.xmlstreamer.Element;
+import aanchev.xmlstreamer.TagEventNotifier;
 
 public class ContentMatchingSelectorProvider extends BasicSelectorProvider {
 
 	/* Construction */
 
-	public ContentMatchingSelectorProvider(AsyncXMLStreamer streamer) {
-		super(streamer);
+	public ContentMatchingSelectorProvider(TagEventNotifier notifier) {
+		super(notifier);
 	}
 
 

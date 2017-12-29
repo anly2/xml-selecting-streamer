@@ -17,7 +17,7 @@ import javax.xml.stream.XMLEventReader;
 import aanchev.utils.Pair;
 import aanchev.xmlstreamer.selectors.Selector;
 
-public class AsyncXMLStreamer extends BasicXMLStreamer {
+public class AsyncXMLStreamer extends BasicXMLStreamer implements TagEventNotifier {
 
 	/* Properties */
 
@@ -56,23 +56,27 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 	}
 
 
-	/* Rudimentary Functionality */
+	/* TagEventNotifier contract / Base Async Functionality */
 
+	@Override
 	public Consumer<Element> onTagStart(Consumer<Element> action) {
 		actionsOpen.add(action);
 		return action;
 	}
 
+	@Override
 	public boolean offTagStart(Consumer<Element> action) {
 		return actionsOpen.remove(action);
 	}
 
 
+	@Override
 	public Consumer<Element> onTagEnd(Consumer<Element> action) {
 		actionsClose.add(action);
 		return action;
 	}
 
+	@Override
 	public boolean offTagEnd(Consumer<Element> action) {
 		return actionsClose.remove(action);
 	}
@@ -85,7 +89,7 @@ public class AsyncXMLStreamer extends BasicXMLStreamer {
 
 		sel.trigger(e -> {
 			if (!e.isClosed())
-				keepChildren();
+				keepChildren(true);
 
 			action.accept(e);
 		});

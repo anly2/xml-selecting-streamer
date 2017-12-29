@@ -7,20 +7,20 @@ import java.util.function.Consumer;
 
 import aanchev.parser.SimpleParser;
 import aanchev.parser.SimpleParser.AST;
-import aanchev.xmlstreamer.AsyncXMLStreamer;
 import aanchev.xmlstreamer.Element;
+import aanchev.xmlstreamer.TagEventNotifier;
 
 public abstract class AbstractSelectorProvider implements Selector.Compiler.BuilderDecorator {
 
 	/* Bound Properties */
 
-	protected AsyncXMLStreamer streamer;
+	protected TagEventNotifier notifier;
 
 
 	/* Constructors */
 
-	public AbstractSelectorProvider(AsyncXMLStreamer streamer) {
-		this.streamer = streamer;
+	public AbstractSelectorProvider(TagEventNotifier notifier) {
+		this.notifier = notifier;
 	}
 
 
@@ -94,12 +94,12 @@ public abstract class AbstractSelectorProvider implements Selector.Compiler.Buil
 
 		@Override
 		public void attach() {
-			streamer.onTagStart(this);
+			notifier.onTagStart(this);
 		}
 
 		@Override
 		public void detach() {
-			streamer.offTagStart(this);
+			notifier.offTagStart(this);
 		}
 	}
 

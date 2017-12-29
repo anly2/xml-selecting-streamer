@@ -11,8 +11,9 @@ import java.util.regex.Pattern;
 import aanchev.parser.SimpleParser;
 import aanchev.parser.SimpleParser.AST;
 import aanchev.parser.SimpleParser.Castable;
-import aanchev.xmlstreamer.AsyncXMLStreamer;
+import aanchev.xmlstreamer.ChildCullingXMLStreamer;
 import aanchev.xmlstreamer.Element;
+import aanchev.xmlstreamer.TagEventNotifier;
 
 public class BasicSelectorProvider extends AbstractSelectorProvider {
 	/*
@@ -26,8 +27,8 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 
 	/* Constructors */
 
-	public BasicSelectorProvider(AsyncXMLStreamer streamer) {
-		super(streamer);
+	public BasicSelectorProvider(TagEventNotifier notifier) {
+		super(notifier);
 	}
 
 
@@ -172,12 +173,12 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 			public void attach() {
 				//## order of attachments matters! -- trackers first
 
-				startTracker = streamer.onTagStart(e -> {
+				startTracker = notifier.onTagStart(e -> {
 					if (depth >= 0)
 						depth++;
 				});
 
-				endTracker = streamer.onTagEnd(e -> {
+				endTracker = notifier.onTagEnd(e -> {
 					if (depth >= 0)
 						depth--;
 				});
@@ -198,8 +199,8 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 
 			@Override
 			public void detach() {
-				streamer.offTagStart(startTracker);
-				streamer.offTagEnd(endTracker);
+				notifier.offTagStart(startTracker);
+				notifier.offTagEnd(endTracker);
 
 				startTracker = null;
 				endTracker = null;
@@ -220,12 +221,12 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 			public void attach() {
 				//## order of attachments matters! -- trackers first
 
-				startTracker = streamer.onTagStart(e -> {
+				startTracker = notifier.onTagStart(e -> {
 					if (depth >= 0)
 						depth++;
 				});
 
-				endTracker = streamer.onTagEnd(e -> {
+				endTracker = notifier.onTagEnd(e -> {
 					if (depth >= 0)
 						depth--;
 				});
@@ -245,8 +246,8 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 
 			@Override
 			public void detach() {
-				streamer.offTagStart(startTracker);
-				streamer.offTagEnd(endTracker);
+				notifier.offTagStart(startTracker);
+				notifier.offTagEnd(endTracker);
 
 				startTracker = null;
 				endTracker = null;
@@ -286,12 +287,12 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 
 
 				// attach trackers
-				startTracker = streamer.onTagStart(e -> {
+				startTracker = notifier.onTagStart(e -> {
 					if (depth >= 0)
 						depth++;
 				});
 
-				endTracker = streamer.onTagEnd(e -> {
+				endTracker = notifier.onTagEnd(e -> {
 					if (depth >= 0)
 						depth--;
 
@@ -302,8 +303,8 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 
 			@Override
 			public void detach() {
-				streamer.offTagStart(startTracker);
-				streamer.offTagEnd(endTracker);
+				notifier.offTagStart(startTracker);
+				notifier.offTagEnd(endTracker);
 
 				startTracker = null;
 				endTracker = null;
@@ -337,20 +338,20 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 
 
 				// attach the trackers
-				startTracker = streamer.onTagStart(e -> {
+				startTracker = notifier.onTagStart(e -> {
 					wasActive = active;
 					active = false;
 				});
 
-				endTracker = streamer.onTagEnd(e -> {
+				endTracker = notifier.onTagEnd(e -> {
 					active = pending.remove(e);
 				});
 			}
 
 			@Override
 			public void detach() {
-				streamer.offTagStart(startTracker);
-				streamer.offTagEnd(endTracker);
+				notifier.offTagStart(startTracker);
+				notifier.offTagEnd(endTracker);
 
 				startTracker = null;
 				endTracker = null;
@@ -383,7 +384,8 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 				if (element.isClosed())
 					return true;
 
-				streamer.keepChildren(true); //keep the subsequent children
+				if (notifier instanceof ChildCullingXMLStreamer)
+					((ChildCullingXMLStreamer) notifier).keepChildren(true); //keep the subsequent children
 
 				pending.add(element);
 				return false;
@@ -393,7 +395,7 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 			public void attach() {
 				super.attach();
 
-				endTracker = streamer.onTagEnd(e -> {
+				endTracker = notifier.onTagEnd(e -> {
 					if (pending.remove(e))
 						action.accept(e);
 				});
@@ -403,7 +405,7 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 			public void detach() {
 				super.detach();
 
-				streamer.offTagEnd(endTracker);
+				notifier.offTagEnd(endTracker);
 				endTracker = null;
 			}
 		};

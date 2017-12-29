@@ -5,8 +5,8 @@ import java.util.LinkedList;
 import java.util.function.Consumer;
 
 import aanchev.parser.SimpleParser;
-import aanchev.xmlstreamer.AsyncXMLStreamer;
 import aanchev.xmlstreamer.Element;
+import aanchev.xmlstreamer.TagEventNotifier;
 
 public interface Selector {
 	public void attach();
@@ -64,11 +64,11 @@ public interface Selector {
 
 	}
 
-	public static Compiler compilerFor(AsyncXMLStreamer streamer) {
+	public static Compiler compilerFor(TagEventNotifier notifier) {
 		return new Compiler.Builder()
-					.chain(new BasicSelectorProvider(streamer))
-					.chain(new ContentMatchingSelectorProvider(streamer))
-					.chain(new TargetingSelectorProvider(streamer))
+					.chain(new BasicSelectorProvider(notifier))
+					.chain(new ContentMatchingSelectorProvider(notifier))
+					.chain(new TargetingSelectorProvider(notifier))
 					.build();
 	}
 }

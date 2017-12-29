@@ -21,7 +21,7 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
+public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element>, ChildCullingXMLStreamer {
 
 	/* Properties */
 
@@ -87,19 +87,25 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 	}
 
 
-	public boolean keepChildren() {
+	/* Child Culling Contract */
+
+	@Override
+	public boolean keepsChildren() {
 		return (depthTracked >= 0);
 	}
 
+	@Override
 	public void keepChildren(boolean shouldKeep) {
-		depthTracked = shouldKeep? keepChildren()? Math.min(depthTracked, open.size()) : open.size() : -1;
+		depthTracked = shouldKeep? keepsChildren()? Math.min(depthTracked, open.size()) : open.size() : -1;
 	}
 
 
-	public boolean keepAllChildren() {
+	@Override
+	public boolean keepsAllChildren() {
 		return (depthTracked == 0);
 	}
 
+	@Override
 	public void keepAllChildren(boolean shouldKeep) {
 		depthTracked = shouldKeep? 0 : -1;
 	}
@@ -165,7 +171,7 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 			if (event.isStartElement()) {
 				Node element = asElement(event);
 
-				if (keepChildren() && !open.isEmpty())
+				if (keepsChildren() && !open.isEmpty())
 					open.peek().appendChild(element);
 
 				open.push(element);
@@ -188,7 +194,7 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element> {
 			}
 
 			if (event.isCharacters()) {
-				if (keepChildren())
+				if (keepsChildren())
 					open.peek().appendChild(new Text(event.asCharacters().getData()));
 			}
 		}

@@ -7,8 +7,9 @@ import java.util.function.Consumer;
 
 import aanchev.parser.SimpleParser;
 import aanchev.parser.SimpleParser.AST;
-import aanchev.xmlstreamer.AsyncXMLStreamer;
+import aanchev.xmlstreamer.ChildCullingXMLStreamer;
 import aanchev.xmlstreamer.Element;
+import aanchev.xmlstreamer.TagEventNotifier;
 import aanchev.xmlstreamer.selectors.Selector.Compiler;
 
 public class TargetingSelectorProvider extends AbstractSelectorProvider implements Selector.Compiler {
@@ -24,8 +25,8 @@ public class TargetingSelectorProvider extends AbstractSelectorProvider implemen
 		this(null);
 	}
 
-	public TargetingSelectorProvider(AsyncXMLStreamer streamer) {
-		super(streamer);
+	public TargetingSelectorProvider(TagEventNotifier notifier) {
+		super(notifier);
 	}
 
 
@@ -136,7 +137,10 @@ public class TargetingSelectorProvider extends AbstractSelectorProvider implemen
 
 				inner.trigger(element -> {
 					refTarget.value = element;
-					streamer.keepChildren(true);
+
+					if (notifier instanceof ChildCullingXMLStreamer)
+						((ChildCullingXMLStreamer) notifier).keepChildren(true);
+
 					action.accept(element);
 				});
 				inner.attach();
