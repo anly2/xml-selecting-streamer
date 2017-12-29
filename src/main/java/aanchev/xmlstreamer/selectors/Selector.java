@@ -18,16 +18,16 @@ public interface Selector {
 		public Selector compile(CharSequence selector);
 
 
-		public interface Decorator {
+		public interface BuilderDecorator {
 			public void decorate(SimpleParser.Builder builder);
 			public Selector.Compiler intercept(Selector.Compiler result);
 		}
 
 
 		public static class Builder {
-			private LinkedList<Decorator> decorators = new LinkedList<>();
+			private LinkedList<BuilderDecorator> decorators = new LinkedList<>();
 
-			public Builder chain(Decorator decorator) {
+			public Builder chain(BuilderDecorator decorator) {
 				decorators.add(decorator);
 				return this;
 			}
@@ -35,14 +35,14 @@ public interface Selector {
 			public Selector.Compiler build() {
 				SimpleParser.Builder builder = new SimpleParser.Builder();
 
-				for (Decorator decorator : decorators) {
+				for (BuilderDecorator decorator : decorators) {
 					decorator.decorate(builder);
 					builder.lastly(); //"reset" the insertion index, just in case
 				}
 
 				Selector.Compiler result = new ParserBridge(builder.build());
 
-				for (Iterator<Decorator> it=decorators.descendingIterator(); it.hasNext();)
+				for (Iterator<BuilderDecorator> it=decorators.descendingIterator(); it.hasNext();)
 					result = it.next().intercept(result);
 
 				return result;
