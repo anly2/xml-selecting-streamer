@@ -30,7 +30,7 @@ public abstract class AbstractSelectorProvider implements Selector.Compiler.Deco
 	public abstract void decorate(SimpleParser.Builder builder);
 
 	@Override
-	public Selector.Compiler encapsulate(Selector.Compiler result) {
+	public Selector.Compiler intercept(Selector.Compiler result) {
 		return result;
 	}
 

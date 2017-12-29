@@ -20,7 +20,7 @@ public interface Selector {
 
 		public interface Decorator {
 			public void decorate(SimpleParser.Builder builder);
-			public Selector.Compiler encapsulate(Selector.Compiler result);
+			public Selector.Compiler intercept(Selector.Compiler result);
 		}
 
 
@@ -43,7 +43,7 @@ public interface Selector {
 				Selector.Compiler result = new ParserBridge(builder.build());
 
 				for (Iterator<Decorator> it=decorators.descendingIterator(); it.hasNext();)
-					result = it.next().encapsulate(result);
+					result = it.next().intercept(result);
 
 				return result;
 			}

@@ -40,7 +40,7 @@ public class TargetingSelectorProvider extends AbstractSelectorProvider implemen
 	}
 
 	@Override
-	public Compiler encapsulate(Compiler result) {
+	public Compiler intercept(Compiler result) {
 		this.kernelParser = result;
 		return this;
 	}
