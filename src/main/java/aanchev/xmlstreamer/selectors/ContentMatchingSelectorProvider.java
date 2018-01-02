@@ -24,7 +24,8 @@ public class ContentMatchingSelectorProvider extends BasicSelectorProvider {
 		builder.firstly()
 			.rule("\\s*+"+ "([^\\s\\{]++)?" + "\\{([^\\}]*+)\\}" +"\\s*+", m -> selTrimMatchingContent(m.group(2)), 2)
 			.rule("\\s*+"+ "([^\\s\\|]++)?" + "\\|([^\\|]*+)\\|" +"\\s*+", m -> selExactMatchingContent(m.group(2)), 2)
-			.rule("\\s*+"+ "([^\\s\\/]++)?" + "\\/([^\\/]*+)\\/" +"\\s*+", m -> selRegexMatchingContent(m.group(2)), 2);
+			.rule("\\s*+"+ "([^\\s\\/]++)?" + "\\/([^\\/]*+)\\/" +"\\s*+", m -> selRegexMatchingContent(m.group(2)), 2)
+			.lastly();
 	}
 
 
