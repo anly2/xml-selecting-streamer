@@ -21,7 +21,7 @@ public class AppTest extends TestCase {
 	// ~ 6.1 sec (both sub-finds, only title print)
 	// ~ 12  sec (both sub-finds, both prints)
 	@SuppressWarnings("unused")
-	public void testOnData() throws IOException {
+	public void experimentOnData() throws IOException {
 		File file = new File("D:/Work/Java/nlp-data/elderscrolls_pages_current.xml");
 		SelectingReactiveXMLStreamer xmlstreamer = new SelectingReactiveXMLStreamer(file);
 
