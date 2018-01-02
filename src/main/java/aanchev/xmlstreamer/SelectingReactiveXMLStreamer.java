@@ -17,7 +17,7 @@ import javax.xml.stream.XMLEventReader;
 import aanchev.utils.Pair;
 import aanchev.xmlstreamer.selectors.Selector;
 
-public class AsyncXMLStreamer extends BasicXMLStreamer implements TagEventNotifier {
+public class SelectingReactiveXMLStreamer extends BaseXMLStreamer implements ReactiveXMLStreamer {
 
 	/* Properties */
 
@@ -32,19 +32,19 @@ public class AsyncXMLStreamer extends BasicXMLStreamer implements TagEventNotifi
 
 	/* Constructors */
 
-	public AsyncXMLStreamer(File file) {
+	public SelectingReactiveXMLStreamer(File file) {
 		super(file);
 	}
 
-	public AsyncXMLStreamer(InputStream inputStream) {
+	public SelectingReactiveXMLStreamer(InputStream inputStream) {
 		super(inputStream);
 	}
 
-	public AsyncXMLStreamer(Reader reader) {
+	public SelectingReactiveXMLStreamer(Reader reader) {
 		super(reader);
 	}
 
-	public AsyncXMLStreamer(XMLEventReader iterator) {
+	public SelectingReactiveXMLStreamer(XMLEventReader iterator) {
 		super(iterator);
 	}
 

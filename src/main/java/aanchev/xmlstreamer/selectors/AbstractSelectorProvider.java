@@ -8,18 +8,18 @@ import java.util.function.Consumer;
 import aanchev.parser.SimpleParser;
 import aanchev.parser.SimpleParser.AST;
 import aanchev.xmlstreamer.Element;
-import aanchev.xmlstreamer.TagEventNotifier;
+import aanchev.xmlstreamer.ReactiveXMLStreamer;
 
 public abstract class AbstractSelectorProvider implements Selector.Compiler.BuilderDecorator {
 
 	/* Bound Properties */
 
-	protected TagEventNotifier notifier;
+	protected ReactiveXMLStreamer notifier;
 
 
 	/* Constructors */
 
-	public AbstractSelectorProvider(TagEventNotifier notifier) {
+	public AbstractSelectorProvider(ReactiveXMLStreamer notifier) {
 		this.notifier = notifier;
 	}
 

@@ -11,9 +11,9 @@ import java.util.regex.Pattern;
 import aanchev.parser.SimpleParser;
 import aanchev.parser.SimpleParser.AST;
 import aanchev.parser.SimpleParser.Castable;
-import aanchev.xmlstreamer.ChildCullingXMLStreamer;
+import aanchev.xmlstreamer.ChildCulling;
 import aanchev.xmlstreamer.Element;
-import aanchev.xmlstreamer.TagEventNotifier;
+import aanchev.xmlstreamer.ReactiveXMLStreamer;
 
 public class BasicSelectorProvider extends AbstractSelectorProvider {
 	/*
@@ -27,7 +27,7 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 
 	/* Constructors */
 
-	public BasicSelectorProvider(TagEventNotifier notifier) {
+	public BasicSelectorProvider(ReactiveXMLStreamer notifier) {
 		super(notifier);
 	}
 
@@ -384,8 +384,8 @@ public class BasicSelectorProvider extends AbstractSelectorProvider {
 				if (element.isClosed())
 					return true;
 
-				if (notifier instanceof ChildCullingXMLStreamer)
-					((ChildCullingXMLStreamer) notifier).keepChildren(true); //keep the subsequent children
+				if (notifier instanceof ChildCulling)
+					((ChildCulling) notifier).keepChildren(true); //keep the subsequent children
 
 				pending.add(element);
 				return false;

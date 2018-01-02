@@ -19,7 +19,7 @@ public class ContentSelectorsTest {
 			"<book id='B3'>Not An Adventure into the Woods</book>",
 			"</root>"
 		);
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		SelectingReactiveXMLStreamer streamer = new SelectingReactiveXMLStreamer(new StringReader(xml));
 
 		final Expectations<String> expect = new Expectations<>("B1", "B2");
 		streamer.on("book{An Adventure into the Woods}", e -> expect.a(e.getAttribute("id").toString()));
@@ -39,7 +39,7 @@ public class ContentSelectorsTest {
 			"<book id='B3'>Not An Adventure into the Woods</book>",
 			"</root>"
 		);
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		SelectingReactiveXMLStreamer streamer = new SelectingReactiveXMLStreamer(new StringReader(xml));
 
 		final Expectations<String> expect = new Expectations<>("B1");
 		streamer.on("book|An Adventure into the Woods|", e -> expect.a(e.getAttribute("id").toString()));
@@ -57,7 +57,7 @@ public class ContentSelectorsTest {
 			"<book id='B3'>Not An Adventure into the Woods</book>",
 			"</root>"
 		);
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		SelectingReactiveXMLStreamer streamer = new SelectingReactiveXMLStreamer(new StringReader(xml));
 
 		final Expectations<String> expect = new Expectations<>("B1", "B3");
 		streamer.on("book/Adventure.*?Woods/", e -> expect.a(e.getAttribute("id").toString()));

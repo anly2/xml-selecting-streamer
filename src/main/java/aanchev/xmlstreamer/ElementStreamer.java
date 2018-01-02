@@ -7,7 +7,7 @@ import java.util.LinkedList;
 
 import javax.xml.stream.XMLEventReader;
 
-public class ElementStreamer extends AsyncXMLStreamer {
+public class ElementStreamer extends SelectingReactiveXMLStreamer {
 
 	private Iterator<Element> elements;
 

@@ -2,7 +2,7 @@ package aanchev.xmlstreamer;
 
 import java.util.function.Consumer;
 
-public interface TagEventNotifier {
+public interface ReactiveXMLStreamer {
 
 	public Consumer<Element> onTagStart(Consumer<Element> action);
 	public Consumer<Element> onTagEnd(Consumer<Element> action);

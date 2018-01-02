@@ -68,7 +68,7 @@ public class AsyncXMLStreamerTest {
 			"</section>",
 			"</root>"
 		);
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		SelectingReactiveXMLStreamer streamer = new SelectingReactiveXMLStreamer(new StringReader(xml));
 
 		final Expectations<String> expect = new Expectations<>("title|B1", "A1", "title|B2", "A2", "title|B2");
 		streamer.on("book title", e -> expect.a(e.getTag() + "|"+e.getText()));
@@ -89,7 +89,7 @@ public class AsyncXMLStreamerTest {
 			"</section>",
 			"</root>"
 		);
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		SelectingReactiveXMLStreamer streamer = new SelectingReactiveXMLStreamer(new StringReader(xml));
 
 		final Expectations<String> expect = new Expectations<>("1", "2");
 		streamer.on("book~book", e -> expect.a(e.getText()));
@@ -110,7 +110,7 @@ public class AsyncXMLStreamerTest {
 			"</section>",
 			"</root>"
 		);
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		SelectingReactiveXMLStreamer streamer = new SelectingReactiveXMLStreamer(new StringReader(xml));
 
 		final Expectations<String> expect = new Expectations<>("1", "2");
 		streamer.on("book+book", e -> expect.a(e.getText()));
@@ -125,7 +125,7 @@ public class AsyncXMLStreamerTest {
 			"<book>B</book>",
 			"</root>"
 		);
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		SelectingReactiveXMLStreamer streamer = new SelectingReactiveXMLStreamer(new StringReader(xml));
 
 		final Expectations<Integer> expect = new Expectations<>(1, 2);
 		streamer.on("book+book:before", e -> expect.a(1));
@@ -142,7 +142,7 @@ public class AsyncXMLStreamerTest {
 			"<p>1</p>",
 			"</root>"
 		);
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		SelectingReactiveXMLStreamer streamer = new SelectingReactiveXMLStreamer(new StringReader(xml));
 
 		final Expectations<String> expect = new Expectations<>("1");
 		streamer.on("book+:not(book)", e -> expect.a(e.getText()));

@@ -9,7 +9,7 @@ import javax.xml.stream.XMLEventReader;
 
 //TODO: implement Closable for all Streamers
 
-public class XMLScanner extends AsyncXMLStreamer {
+public class XMLScanner extends SelectingReactiveXMLStreamer {
 
 	private Element found;
 	private String lastQuery = null;

@@ -37,7 +37,7 @@ public class TargetingSelectorTest {
 			"</book>",
 			"</root>"
 		);
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		SelectingReactiveXMLStreamer streamer = new SelectingReactiveXMLStreamer(new StringReader(xml));
 
 		final Expectations<String> expect = new Expectations<>("B1", "B2");
 		streamer.on("$book>title+author", e -> expect.a(e.getAttribute("id").toString()));
@@ -59,7 +59,7 @@ public class TargetingSelectorTest {
 			"</div>",
 			"</root>"
 		);
-		AsyncXMLStreamer streamer = new AsyncXMLStreamer(new StringReader(xml));
+		SelectingReactiveXMLStreamer streamer = new SelectingReactiveXMLStreamer(new StringReader(xml));
 
 		final Expectations<String> expect = new Expectations<>("1", "3");
 		streamer.on("$div b", e -> expect.a(e.getAttribute("id").toString()));

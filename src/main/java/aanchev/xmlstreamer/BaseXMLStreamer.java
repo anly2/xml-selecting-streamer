@@ -21,7 +21,7 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element>, ChildCullingXMLStreamer {
+public class BaseXMLStreamer implements Iterable<Element>, Iterator<Element>, ChildCulling {
 
 	/* Properties */
 
@@ -33,19 +33,19 @@ public class BasicXMLStreamer implements Iterable<Element>, Iterator<Element>, C
 
 	/* Constructors */
 
-	public BasicXMLStreamer(XMLEventReader iterator) {
+	public BaseXMLStreamer(XMLEventReader iterator) {
 		this.xmlIterator = iterator;
 	}
 
-	public BasicXMLStreamer(InputStream inputStream) {
+	public BaseXMLStreamer(InputStream inputStream) {
 		this(createEventReader(inputStream));
 	}
 
-	public BasicXMLStreamer(Reader reader) {
+	public BaseXMLStreamer(Reader reader) {
 		this(createEventReader(reader));
 	}
 
-	public BasicXMLStreamer(File file) {
+	public BaseXMLStreamer(File file) {
 		this(createEventReader(file));
 	}
 

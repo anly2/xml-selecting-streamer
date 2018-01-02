@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 
 import aanchev.parser.SimpleParser;
 import aanchev.xmlstreamer.Element;
-import aanchev.xmlstreamer.TagEventNotifier;
+import aanchev.xmlstreamer.ReactiveXMLStreamer;
 
 public interface Selector {
 	public void attach();
@@ -64,7 +64,7 @@ public interface Selector {
 
 	}
 
-	public static Compiler compilerFor(TagEventNotifier notifier) {
+	public static Compiler compilerFor(ReactiveXMLStreamer notifier) {
 		return new Compiler.Builder()
 					.chain(new BasicSelectorProvider(notifier))
 					.chain(new ContentMatchingSelectorProvider(notifier))

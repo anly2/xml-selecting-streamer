@@ -6,13 +6,13 @@ import java.util.regex.Pattern;
 import aanchev.parser.SimpleParser.AST;
 import aanchev.parser.SimpleParser.Builder;
 import aanchev.xmlstreamer.Element;
-import aanchev.xmlstreamer.TagEventNotifier;
+import aanchev.xmlstreamer.ReactiveXMLStreamer;
 
 public class ContentMatchingSelectorProvider extends BasicSelectorProvider {
 
 	/* Construction */
 
-	public ContentMatchingSelectorProvider(TagEventNotifier notifier) {
+	public ContentMatchingSelectorProvider(ReactiveXMLStreamer notifier) {
 		super(notifier);
 	}
 

@@ -23,7 +23,7 @@ public class AppTest extends TestCase {
 	@SuppressWarnings("unused")
 	public void testOnData() throws IOException {
 		File file = new File("D:/Work/Java/nlp-data/elderscrolls_pages_current.xml");
-		AsyncXMLStreamer xmlstreamer = new AsyncXMLStreamer(file);
+		SelectingReactiveXMLStreamer xmlstreamer = new SelectingReactiveXMLStreamer(file);
 
 		@SuppressWarnings("resource")
 		final Scanner in = new Scanner(System.in);
@@ -94,7 +94,7 @@ public class AppTest extends TestCase {
 	// ~ 3.6 sec (XML wrappers)
 	public void checkSpeedOnDryRead() {
 		File file = new File("D:/Work/Java/nlp-data/elderscrolls_pages_current.xml");
-		AsyncXMLStreamer xmlstreamer = new AsyncXMLStreamer(file);
+		SelectingReactiveXMLStreamer xmlstreamer = new SelectingReactiveXMLStreamer(file);
 		xmlstreamer.drain();
 	}
 }
