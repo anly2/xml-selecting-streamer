@@ -3,6 +3,8 @@ package aanchev.xmlstreamer;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Scanner;
 
 import javax.xml.stream.FactoryConfigurationError;
@@ -18,12 +20,16 @@ public class AppTest extends TestCase {
 	// ~ 5.1 sec (both sub-finds, no prints)
 	// ~ 6.1 sec (both sub-finds, only title print)
 	// ~ 12  sec (both sub-finds, both prints)
-	public void testOnData() {
+	@SuppressWarnings("unused")
+	public void testOnData() throws IOException {
 		File file = new File("D:/Work/Java/nlp-data/elderscrolls_pages_current.xml");
 		AsyncXMLStreamer xmlstreamer = new AsyncXMLStreamer(file);
 
 		@SuppressWarnings("resource")
-		Scanner in = new Scanner(System.in);
+		final Scanner in = new Scanner(System.in);
+		final FileWriter out = new FileWriter("D:/Work/Java/nlp-data/elderscrolls_wikipages.xml");
+
+		out.append("<root>");
 
 		int[] i = {0};
 		xmlstreamer.on("page$>title~ns{0}", e -> {
@@ -31,15 +37,30 @@ public class AppTest extends TestCase {
 			String title = e.find("title").getText();
 			String text = e.find("text").getText();
 
-			System.out.println(" == " + title + " == ");
-			System.out.println(text);
+			try {
+				out.append("<page><title>");
+				out.append(title);
+				out.append("</title><text>");
+				out.append(text);
+				out.append("</text></page>");
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
 
-			in.nextLine(); //pause
+			System.out.println(" == " + title + " == ");
+//			System.out.println(text);
+
+//			in.nextLine(); //pause
 		});
 
 		System.out.println("Reading: "+file);
 		xmlstreamer.drain();
 		System.out.println(i[0] + " pages matched");
+
+		out.append("</root>");
+		out.flush();
+		out.close();
 	}
 
 	public void experimentOnBlockingSource() {
